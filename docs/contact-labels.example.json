@@ -1,0 +1,22 @@
+{
+  "contacts": {
+    "客户A": {
+      "role": "customer"
+    },
+    "供应商B": {
+      "role": "vendor"
+    },
+    "老婆": {
+      "role": "family"
+    },
+    "朋友C": {
+      "role": "friend"
+    },
+    "产品审批部-吴经理": {
+      "role": "ad"
+    },
+    "营销号D": {
+      "role": "spam"
+    }
+  }
+}
