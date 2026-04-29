@@ -1,6 +1,5 @@
 import {
   BarList,
-  BulletList,
   MetaList,
   SectionKicker,
   SummaryGrid,
@@ -16,14 +15,25 @@ export default function OverviewSection({
   windowRows,
   windowSummaryRows,
 }) {
+  const [headline, ...details] = summaryLines;
+
   return (
     <>
       <SectionKicker title="Overview" subtitle="先看这段时间你最值得关注的聊天摘要" />
       <section className="content-grid content-grid--overview">
-        <article className="panel panel--wide">
+        <article className="panel panel--wide overview-summary">
           <h2>一句话摘要</h2>
-          <p className="panel__subtle">把当期最浓缩的会话结论放在前面，方便你快速判断今天发生了什么。</p>
-          <BulletList emptyText="暂无摘要" items={summaryLines} />
+          <p className="panel__subtle">先给结论，再列出本期最值得扫一眼的重点。</p>
+          {headline ? <p className="overview-summary__lead">{headline}</p> : <div className="empty-state">暂无摘要</div>}
+          {details.length ? (
+            <ul className="overview-summary__facts">
+              {details.map((item, index) => (
+                <li className="overview-summary__fact" key={`${item}-${index}`}>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </article>
         <article className="panel panel--wide">
           <div className="panel__header">

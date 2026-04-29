@@ -12,7 +12,8 @@
     "motion": "^12.38.0",
     "ogl": "^1.0.11",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "4.3.1",

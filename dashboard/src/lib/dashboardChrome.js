@@ -9,42 +9,19 @@ export function buildMetricCards(overview) {
   ];
 }
 
-export function buildHeroRows({ emotionLabel, emotionTone, mbtiType, medianResponseText, overviewDays }) {
+export function buildHeroRows({ emotionLabel, emotionTone, mbtiType, overviewDays }) {
   return [
     ["观察区间", `${overviewDays} 天`, "ink"],
     ["人格推测", mbtiType || "--", "sea"],
     ["情绪底色", emotionLabel, emotionTone],
-    ["响应时延", medianResponseText, "gold"],
   ];
 }
 
-export function buildOrbitRows({ avgMessageLength, generatedAt, groupMessageCount, privateMessageCount }) {
+export function buildOrbitRows({ avgMessageLength, groupMessageCount, medianResponseText, privateMessageCount }) {
   return [
     ["群聊消息", groupMessageCount],
     ["私聊消息", privateMessageCount],
     ["平均长度", avgMessageLength],
-    ["生成时间", generatedAt],
-  ];
-}
-
-export function buildRibbonRows({
-  busiestBusinessChatName,
-  busiestSupportChatName,
-  dominantEmotionLabel,
-  mbtiType,
-  medianResponseText,
-  nightRatioText,
-  topContactName,
-  topGroupName,
-}) {
-  return [
-    ["最强群聊", topGroupName],
-    ["最强私聊", topContactName],
-    ["商业密度群", busiestBusinessChatName],
-    ["售后压力群", busiestSupportChatName],
-    ["主导情绪", dominantEmotionLabel],
-    ["人格推测", mbtiType || "--"],
     ["中位响应", medianResponseText],
-    ["夜间占比", nightRatioText],
-  ].filter(([, value]) => value);
+  ];
 }

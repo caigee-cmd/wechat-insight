@@ -1,6 +1,8 @@
 import { useInView } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
+import RelationshipMap from "./RelationshipSphere";
+
 const EMOTION_LABELS = {
   positive: "积极",
   negative: "消极",
@@ -19,19 +21,21 @@ const EMOTION_COLORS = {
 };
 
 const PHRASE_FLOW_LAYOUT_PRESETS = [
-  { accent: "sea", x: 14, y: 33, width: 27, mobileSpan: 2, driftX: -10, driftY: -6, rotate: -1.8 },
-  { accent: "ink", x: 60, y: 29, width: 24, mobileSpan: 2, driftX: 8, driftY: 2, rotate: 1.4 },
-  { accent: "gold", x: 26, y: 6, width: 21, mobileSpan: 1, driftX: -5, driftY: 5, rotate: -0.9 },
-  { accent: "sea", x: 55, y: 63, width: 27, mobileSpan: 2, driftX: 6, driftY: -5, rotate: 1.1 },
-  { accent: "ink", x: 2, y: 59, width: 21, mobileSpan: 1, driftX: -8, driftY: 4, rotate: -1.2 },
-  { accent: "gold", x: 76, y: 8, width: 17, mobileSpan: 1, driftX: 5, driftY: -4, rotate: 1.2 },
-  { accent: "sea", x: 34, y: 76, width: 18, mobileSpan: 1, driftX: -4, driftY: 6, rotate: -0.7 },
-  { accent: "ink", x: 43, y: 0, width: 18, mobileSpan: 1, driftX: 7, driftY: -3, rotate: 0.8 },
-  { accent: "gold", x: 81, y: 48, width: 15, mobileSpan: 1, driftX: 6, driftY: 5, rotate: -0.6 },
-  { accent: "sea", x: 7, y: 13, width: 15, mobileSpan: 1, driftX: -3, driftY: 4, rotate: 0.9 },
-  { accent: "ink", x: 23, y: 56, width: 17, mobileSpan: 1, driftX: 4, driftY: -5, rotate: 0.5 },
-  { accent: "gold", x: 63, y: 80, width: 17, mobileSpan: 1, driftX: -5, driftY: 4, rotate: -0.8 },
+  { accent: "sea", lane: "mid", x: 14, y: 33, width: 27, mobileSpan: 2, driftX: -10, driftY: -6, rotate: -1.8 },
+  { accent: "ink", lane: "mid", x: 60, y: 29, width: 24, mobileSpan: 2, driftX: 8, driftY: 2, rotate: 1.4 },
+  { accent: "gold", lane: "top", x: 26, y: 6, width: 21, mobileSpan: 1, driftX: -5, driftY: 5, rotate: -0.9 },
+  { accent: "sea", lane: "bottom", x: 55, y: 63, width: 27, mobileSpan: 2, driftX: 6, driftY: -5, rotate: 1.1 },
+  { accent: "ink", lane: "mid", x: 2, y: 59, width: 21, mobileSpan: 1, driftX: -8, driftY: 4, rotate: -1.2 },
+  { accent: "gold", lane: "top", x: 76, y: 8, width: 17, mobileSpan: 1, driftX: 5, driftY: -4, rotate: 1.2 },
+  { accent: "sea", lane: "bottom", x: 34, y: 76, width: 18, mobileSpan: 1, driftX: -4, driftY: 6, rotate: -0.7 },
+  { accent: "ink", lane: "top", x: 43, y: 0, width: 18, mobileSpan: 1, driftX: 7, driftY: -3, rotate: 0.8 },
+  { accent: "gold", lane: "mid", x: 81, y: 48, width: 15, mobileSpan: 1, driftX: 6, driftY: 5, rotate: -0.6 },
+  { accent: "sea", lane: "top", x: 7, y: 13, width: 15, mobileSpan: 1, driftX: -3, driftY: 4, rotate: 0.9 },
+  { accent: "ink", lane: "mid", x: 23, y: 56, width: 17, mobileSpan: 1, driftX: 4, driftY: -5, rotate: 0.5 },
+  { accent: "gold", lane: "bottom", x: 63, y: 80, width: 17, mobileSpan: 1, driftX: -5, driftY: 4, rotate: -0.8 },
 ];
+
+const PHRASE_ACCENTS = ["sea", "ink", "gold"];
 
 function formatNumber(value, digits = 0) {
   const number = Number(value);
@@ -79,23 +83,27 @@ function clipText(value, limit = 22) {
   return `${text.slice(0, limit - 1)}…`;
 }
 
-function spreadAngles(start, end, count) {
-  if (!count) {
-    return [];
+function resolvePhraseAccentSeed(text) {
+  const source = String(text || "").trim();
+  if (!source) {
+    return PHRASE_ACCENTS[0];
   }
-  if (count === 1) {
-    return [(start + end) / 2];
+  let hash = 0;
+  for (const char of source) {
+    hash = (hash + char.codePointAt(0)) % PHRASE_ACCENTS.length;
   }
-  const step = (end - start) / (count - 1);
-  return Array.from({ length: count }, (_, index) => start + step * index);
+  return PHRASE_ACCENTS[hash];
 }
 
-function polarPoint(cx, cy, radius, degrees) {
-  const radians = (degrees * Math.PI) / 180;
-  return {
-    x: cx + Math.cos(radians) * radius,
-    y: cy + Math.sin(radians) * radius,
-  };
+function buildPhraseFocusSummary({ count, isTop, topCount, totalCount }) {
+  const share = totalCount > 0 ? formatPercent(count / totalCount) : "--";
+  if (isTop) {
+    return "当前高频池里最突出的表达";
+  }
+  if (count === topCount) {
+    return `与最高频并列，占当前高频池 ${share}`;
+  }
+  return `比最高频少 ${topCount - count} 次，占当前高频池 ${share}`;
 }
 
 function shouldMountDeferredBlock({ hasEnteredViewport, hasMounted, isActiveTab }) {
@@ -381,9 +389,38 @@ function PhraseCloud({ items }) {
     return <div className="empty-state">暂无明显重复口癖</div>;
   }
   const maxCount = Math.max(...rows.map((item) => Number(item.count || 1)), 1);
+  const topPhrase = rows[0];
+  const topCount = Number(topPhrase?.count || 0);
+  const totalCount = rows.reduce((sum, item) => sum + Number(item?.count || 0), 0);
+  const phraseRows = rows.map((item, index) => {
+    const count = Number(item.count || 1);
+    const accent = resolvePhraseAccentSeed(item.text);
+    const preset = PHRASE_FLOW_LAYOUT_PRESETS[index % PHRASE_FLOW_LAYOUT_PRESETS.length];
+    return {
+      ...item,
+      accent,
+      count,
+      isTop: index === 0,
+      key: `${item.text}-${item.count}`,
+      lane: preset.lane,
+      preset,
+      summary: buildPhraseFocusSummary({
+        count,
+        isTop: index === 0,
+        topCount,
+        totalCount,
+      }),
+    };
+  });
+  const [activePhraseKey, setActivePhraseKey] = useState(null);
+  const activePhrase = phraseRows.find((item) => item.key === activePhraseKey) || phraseRows[0];
+  const coreEyebrow = activePhrase.isTop ? "Top Phrase" : "Phrase Focus";
 
   return (
-    <div aria-label="口癖排版云" className="phrase-cloud">
+    <div
+      aria-label="口癖排版云"
+      className={`phrase-cloud phrase-cloud--lane-${activePhrase.lane} phrase-cloud--tone-${activePhrase.accent}`}
+    >
       <svg aria-hidden="true" className="phrase-cloud__paths" viewBox="0 0 100 100" preserveAspectRatio="none">
         <path d="M2 22 C 18 12, 30 14, 43 26 S 72 40, 98 18" />
         <path d="M0 50 C 18 40, 31 43, 42 50 S 70 60, 100 48" />
@@ -395,29 +432,33 @@ function PhraseCloud({ items }) {
         <span />
         <span />
       </div>
-      <div aria-hidden="true" className="phrase-cloud__core">
-        <span>Phrase Flow</span>
-        <strong>词语流场</strong>
-        <small>高频表达围绕中轴反复折返</small>
+      <div className={`phrase-cloud__core phrase-cloud__core--${activePhrase.accent}`}>
+        <span>{coreEyebrow}</span>
+        <strong>{activePhrase.text}</strong>
+        <b>{activePhrase.count}次</b>
+        <small>{activePhrase.summary}</small>
       </div>
-      {rows.map((item, index) => {
-        const count = Number(item.count || 1);
-        const normalized = count / maxCount;
+      {phraseRows.map((item, index) => {
+        const normalized = item.count / maxCount;
         const size = 0.98 + normalized * 0.9;
         const weight = 540 + Math.round(normalized * 180);
-        const preset = PHRASE_FLOW_LAYOUT_PRESETS[index % PHRASE_FLOW_LAYOUT_PRESETS.length];
         return (
           <article
-            className={`phrase-chip phrase-chip--${preset.accent}`}
-            key={`${item.text}-${item.count}`}
+            className={`phrase-chip phrase-chip--${item.accent} ${activePhrase.key === item.key ? "phrase-chip--active" : ""}`}
+            key={item.key}
+            onBlur={() => setActivePhraseKey(null)}
+            onFocus={() => setActivePhraseKey(item.key)}
+            onMouseEnter={() => setActivePhraseKey(item.key)}
+            onMouseLeave={() => setActivePhraseKey(null)}
+            tabIndex={0}
             style={{
-              "--x": `${preset.x}%`,
-              "--y": `${preset.y}%`,
-              "--width": `${preset.width}%`,
-              "--span-mobile": preset.mobileSpan,
-              "--drift-x": `${preset.driftX}px`,
-              "--drift-y": `${preset.driftY}px`,
-              "--rotate": `${preset.rotate}deg`,
+              "--x": `${item.preset.x}%`,
+              "--y": `${item.preset.y}%`,
+              "--width": `${item.preset.width}%`,
+              "--span-mobile": item.preset.mobileSpan,
+              "--drift-x": `${item.preset.driftX}px`,
+              "--drift-y": `${item.preset.driftY}px`,
+              "--rotate": `${item.preset.rotate}deg`,
               "--duration": `${(7.2 + index * 0.45).toFixed(2)}s`,
               "--delay": `${(-index * 0.52).toFixed(2)}s`,
               fontSize: `${size}rem`,
@@ -430,7 +471,7 @@ function PhraseCloud({ items }) {
               <i />
               <i />
             </span>
-            <em className="phrase-chip__count">{count}次</em>
+            <em className="phrase-chip__count">{item.count}次</em>
           </article>
         );
       })}
@@ -502,259 +543,6 @@ function DeferredBlock({ children, isActiveTab, label, minHeight = 220 }) {
           <p>滚动到这里时再挂载，先把首屏切换和筛选压力压下去。</p>
         </div>
       )}
-    </div>
-  );
-}
-
-function RelationshipMap({ chatRows, contactRows, overview, social }) {
-  const groups = (chatRows || []).filter((row) => row.chat_type === "group").slice(0, 5);
-  const contacts = (contactRows || []).slice(0, 5);
-  const [lockedNode, setLockedNode] = useState(null);
-  const [hoveredNode, setHoveredNode] = useState(null);
-
-  if (!groups.length && !contacts.length) {
-    return <div className="empty-state">暂无社交关系图数据</div>;
-  }
-
-  const width = 860;
-  const height = 520;
-  const cx = 430;
-  const cy = 250;
-  const groupRadius = 190;
-  const contactRadius = 224;
-  const groupMax = Math.max(...groups.map((row) => Number(row.total_messages || 1)), 1);
-  const contactMax = Math.max(...contacts.map((row) => Number(row.total_messages || 1)), 1);
-
-  const defaultState = {
-    eyebrow: "Inspector",
-    title: "将鼠标移到节点上",
-    subtitle: `${overview.mbti_type || "未知"} / ${emotionLabel(overview.dominant_emotion)}`,
-    summary: `${formatNumber(overview.total_messages || 0)} 条消息 · ${social.median_response_latency_minutes ?? "--"} 分钟响应`,
-    type: "会话中心",
-    messages: formatNumber(overview.total_messages || 0),
-    business: formatNumber(overview.business_contact_count || 0),
-    support: formatNumber(social.private_message_count || 0),
-    activeDays: formatNumber(overview.date_span_days || 0),
-    selfRatio: "总览视角",
-    theme: "center",
-  };
-
-  const makeNodeState = (row, theme, kindLabel, subtitle, summary) => ({
-    eyebrow: theme === "group" ? "Group Node" : "Contact Node",
-    title: row.chat_name || row.contact_name || "未知节点",
-    subtitle,
-    summary,
-    type: kindLabel,
-    messages: formatNumber(row.total_messages || 0),
-    business: formatNumber(row.business_signal_count || 0),
-    support: formatNumber(row.support_signal_count || 0),
-    activeDays: formatNumber(row.active_days || 0),
-    selfRatio: formatPercent(row.self_ratio || 0),
-    theme,
-  });
-
-  const groupAngles = spreadAngles(-146, -34, groups.length);
-  const contactAngles = spreadAngles(146, 34, contacts.length);
-
-  const groupNodes = groups.map((row, index) => {
-    const ratio = Number(row.total_messages || 1) / groupMax;
-    const point = polarPoint(cx, cy, groupRadius, groupAngles[index]);
-    return {
-      key: row.chat_id || row.chat_name || `group-${index}`,
-      left: point.x - (144 + ratio * 28) / 2,
-      top: point.y - (74 + ratio * 12) / 2,
-      width: 144 + ratio * 28,
-      height: 74 + ratio * 12,
-      lineWidth: 2.4 + ratio * 6.2,
-      lineX: point.x,
-      lineY: point.y,
-      delay: groupAngles[index] / 36,
-      row,
-      state: makeNodeState(
-        row,
-        "group",
-        "高频群聊",
-        `${formatNumber(row.total_messages || 0)} 条消息 · 群聊场`,
-        `活跃 ${formatNumber(row.active_days || 0)} 天 · 平均 ${formatNumber(row.avg_message_length || 0, 2)} 字 · 最近 ${row.last_active_at || "未知"}`
-      ),
-    };
-  });
-
-  const contactNodes = contacts.map((row, index) => {
-    const ratio = Number(row.total_messages || 1) / contactMax;
-    const point = polarPoint(cx, cy, contactRadius, contactAngles[index]);
-    return {
-      key: row.contact_id || row.contact_name || `contact-${index}`,
-      left: point.x - (132 + ratio * 26) / 2,
-      top: point.y - (70 + ratio * 10) / 2,
-      width: 132 + ratio * 26,
-      height: 70 + ratio * 10,
-      lineWidth: 2.0 + ratio * 5.4,
-      lineX: point.x,
-      lineY: point.y,
-      delay: contactAngles[index] / 42,
-      row,
-      state: makeNodeState(
-        row,
-        "contact",
-        "高频私聊",
-        `${formatNumber(row.total_messages || 0)} 条私聊 · 一对一关系`,
-        `活跃 ${formatNumber(row.active_days || 0)} 天 · 问题占比 ${formatPercent(row.question_ratio || 0)} · 自发 ${formatPercent(row.self_ratio || 0)}`
-      ),
-    };
-  });
-
-  const activeState = hoveredNode || lockedNode || defaultState;
-
-  return (
-    <div className="relationship-map">
-      <div className="relationship-map__ring relationship-map__ring--outer" />
-      <div className="relationship-map__ring relationship-map__ring--inner" />
-      <div className="relationship-map__label relationship-map__label--top">高频群聊场</div>
-      <div className="relationship-map__label relationship-map__label--bottom">高频私聊场</div>
-      <svg className="relationship-map__svg" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-        {groupNodes.map((node) => (
-          <line
-            className="relationship-map__line relationship-map__line--group"
-            key={`line-${node.key}`}
-            style={{ strokeWidth: `${node.lineWidth}px` }}
-            x1={cx}
-            x2={node.lineX}
-            y1={cy}
-            y2={node.lineY}
-          />
-        ))}
-        {contactNodes.map((node) => (
-          <line
-            className="relationship-map__line relationship-map__line--contact"
-            key={`line-${node.key}`}
-            style={{ strokeWidth: `${node.lineWidth}px` }}
-            x1={cx}
-            x2={node.lineX}
-            y1={cy}
-            y2={node.lineY}
-          />
-        ))}
-        <circle className="relationship-map__pulse" cx={cx} cy={cy} r="82" />
-      </svg>
-
-      <button
-        className={`relationship-node relationship-node--center ${!lockedNode && !hoveredNode ? "is-active" : ""}`}
-        onClick={() => setLockedNode(null)}
-        onFocus={() => setHoveredNode(defaultState)}
-        onBlur={() => setHoveredNode(null)}
-        onMouseEnter={() => setHoveredNode(defaultState)}
-        onMouseLeave={() => setHoveredNode(null)}
-        style={{ left: cx - 105, top: cy - 73, width: 210, height: 146 }}
-        type="button"
-      >
-        <div className="relationship-node__eyebrow">Self Core</div>
-        <div className="relationship-node__self">你</div>
-        <div className="relationship-node__meta">
-          {(overview.mbti_type || "未知")} / {emotionLabel(overview.dominant_emotion)}
-        </div>
-        <div className="relationship-node__summary">
-          {formatNumber(overview.total_messages || 0)} 条消息 · {social.median_response_latency_minutes ?? "--"} 分钟响应
-        </div>
-      </button>
-
-      {groupNodes.map((node) => (
-        <button
-          className={`relationship-node relationship-node--group ${lockedNode?.title === node.state.title ? "is-active" : ""}`}
-          key={node.key}
-          onBlur={() => setHoveredNode(null)}
-          onClick={() => setLockedNode(node.state)}
-          onFocus={() => setHoveredNode(node.state)}
-          onMouseEnter={() => setHoveredNode(node.state)}
-          onMouseLeave={() => setHoveredNode(null)}
-          style={{
-            left: node.left,
-            top: node.top,
-            width: node.width,
-            height: node.height,
-            animationDelay: `${node.delay}s`,
-          }}
-          type="button"
-        >
-          <div className="relationship-node__title">{clipText(node.row.chat_name, 18)}</div>
-          <div className="relationship-node__meta">{formatNumber(node.row.total_messages)} 条消息</div>
-          <div className="relationship-node__badges">
-            {Number(node.row.business_signal_count) ? (
-              <span className="relationship-node__badge relationship-node__badge--sea">商业 {node.row.business_signal_count}</span>
-            ) : null}
-            {Number(node.row.support_signal_count) ? (
-              <span className="relationship-node__badge relationship-node__badge--gold">售后 {node.row.support_signal_count}</span>
-            ) : null}
-          </div>
-        </button>
-      ))}
-
-      {contactNodes.map((node) => (
-        <button
-          className={`relationship-node relationship-node--contact ${lockedNode?.title === node.state.title ? "is-active" : ""}`}
-          key={node.key}
-          onBlur={() => setHoveredNode(null)}
-          onClick={() => setLockedNode(node.state)}
-          onFocus={() => setHoveredNode(node.state)}
-          onMouseEnter={() => setHoveredNode(node.state)}
-          onMouseLeave={() => setHoveredNode(null)}
-          style={{
-            left: node.left,
-            top: node.top,
-            width: node.width,
-            height: node.height,
-            animationDelay: `${node.delay}s`,
-          }}
-          type="button"
-        >
-          <div className="relationship-node__title">{clipText(node.row.contact_name, 16)}</div>
-          <div className="relationship-node__meta">{formatNumber(node.row.total_messages)} 条私聊</div>
-          <div className="relationship-node__badges">
-            {Number(node.row.business_signal_count) ? (
-              <span className="relationship-node__badge relationship-node__badge--sea">商业 {node.row.business_signal_count}</span>
-            ) : null}
-            {Number(node.row.support_signal_count) ? (
-              <span className="relationship-node__badge relationship-node__badge--gold">售后 {node.row.support_signal_count}</span>
-            ) : null}
-          </div>
-        </button>
-      ))}
-
-      <aside className={`relationship-inspector relationship-inspector--${activeState.theme}`}>
-        <div className="relationship-inspector__eyebrow">{activeState.eyebrow}</div>
-        <h3 className="relationship-inspector__title">{activeState.title}</h3>
-        <div className="relationship-inspector__subtitle">{activeState.subtitle}</div>
-        <p className="relationship-inspector__summary">{activeState.summary}</p>
-        <div className="relationship-inspector__grid">
-          <div className="relationship-inspector__metric">
-            <span>节点类型</span>
-            <strong>{activeState.type}</strong>
-          </div>
-          <div className="relationship-inspector__metric">
-            <span>消息量</span>
-            <strong>{activeState.messages}</strong>
-          </div>
-          <div className="relationship-inspector__metric">
-            <span>商业</span>
-            <strong>{activeState.business}</strong>
-          </div>
-          <div className="relationship-inspector__metric">
-            <span>售后/私聊</span>
-            <strong>{activeState.support}</strong>
-          </div>
-          <div className="relationship-inspector__metric">
-            <span>活跃天数</span>
-            <strong>{activeState.activeDays}</strong>
-          </div>
-          <div className="relationship-inspector__metric">
-            <span>自发占比</span>
-            <strong>{activeState.selfRatio}</strong>
-          </div>
-        </div>
-        <button className="relationship-inspector__reset" onClick={() => setLockedNode(null)} type="button">
-          重置到中心
-        </button>
-      </aside>
     </div>
   );
 }

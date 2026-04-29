@@ -3,7 +3,6 @@ import {
   buildHeroRows,
   buildMetricCards,
   buildOrbitRows,
-  buildRibbonRows,
 } from "./lib/dashboardChrome";
 import {
   buildActiveTabData,
@@ -26,6 +25,11 @@ import {
   readInitialUiState,
   writeUiStateQuery,
 } from "./lib/presentation";
+import Aurora from "./components/reactbits/Aurora";
+import BorderGlow from "./components/reactbits/BorderGlow";
+import CountUp from "./components/reactbits/CountUp";
+import ShinyText from "./components/reactbits/ShinyText";
+import SpotlightCard from "./components/reactbits/SpotlightCard";
 
 const TABS = [
   { id: "overview", label: "总览", eyebrow: "Pulse", number: "01" },
@@ -123,6 +127,11 @@ function formatNumber(value, digits = 0) {
   return number.toFixed(2).replace(/\.?0+$/, "");
 }
 
+function parseDisplayNumber(value) {
+  const number = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(number) ? number : null;
+}
+
 function formatPercent(value) {
   const number = Number(value);
   if (Number.isNaN(number)) {
@@ -148,12 +157,23 @@ function emotionTone(value) {
 }
 
 function MetricCard({ label, value, tone, detail }) {
+  const numericValue = parseDisplayNumber(value);
+
   return (
-    <article className={`metric-card metric-card--${tone}`}>
+    <SpotlightCard
+      className={`metric-card metric-card--${tone}`}
+      spotlightColor="rgba(23, 224, 177, 0.16)"
+    >
       <div className="metric-card__label">{label}</div>
-      <div className="metric-card__value">{formatNumber(value)}</div>
+      <div className="metric-card__value">
+        {numericValue === null ? (
+          formatNumber(value)
+        ) : (
+          <CountUp to={numericValue} duration={1.25} separator="," />
+        )}
+      </div>
       <div className="metric-card__detail">{detail}</div>
-    </article>
+    </SpotlightCard>
   );
 }
 
@@ -181,49 +201,6 @@ const MetricsStrip = memo(function MetricsStrip({
       ))}
     </section>
   );
-});
-
-function InsightRibbon({ items }) {
-  if (!items.length) {
-    return null;
-  }
-
-  return (
-    <section className="insight-ribbon" aria-label="关键摘要滚动带">
-      <div className="insight-ribbon__track">
-        {items.map(([label, value], index) => (
-          <div className="insight-ribbon__item" key={`${label}-${value}-${index}`}>
-            <span>{label}</span>
-            <strong>{value || "--"}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-const DashboardRibbon = memo(function DashboardRibbon({
-  busiestBusinessChatName,
-  busiestSupportChatName,
-  dominantEmotionLabel,
-  mbtiType,
-  medianResponseText,
-  nightRatioText,
-  topContactName,
-  topGroupName,
-}) {
-  const items = buildRibbonRows({
-    busiestBusinessChatName,
-    busiestSupportChatName,
-    dominantEmotionLabel,
-    mbtiType,
-    medianResponseText,
-    nightRatioText,
-    topContactName,
-    topGroupName,
-  });
-
-  return <InsightRibbon items={items} />;
 });
 
 function DockIconGlyph({ children }) {
@@ -325,70 +302,109 @@ const DashboardHero = memo(
       emotionLabel: dominantEmotionLabel,
       emotionTone: dominantEmotionTone,
       mbtiType,
-      medianResponseText,
       overviewDays,
     });
     const orbitRows = buildOrbitRows({
       avgMessageLength,
-      generatedAt: generatedAtText,
       groupMessageCount,
+      medianResponseText,
       privateMessageCount,
     });
 
     return (
-      <section className="hero">
-        <div className="hero__grid">
-          <div>
+      <section className="hero hero--workbench">
+        <div className="hero__masthead">
+          <div className="hero__identity">
             <div className="hero__eyebrow">WeChat Insight</div>
             <h1>
-              微信洞察 <span className="gradient-text hero-shiny">Dashboard</span>
+              微信洞察{" "}
+              <ShinyText
+                className="gradient-text hero-shiny"
+                color="#d66a35"
+                shineColor="#fff0b8"
+                speed={3.4}
+                text="关系工作台"
+              />
             </h1>
-            <p className="hero__lead">
-              React 展示层现在和导出页统一成同一套视觉语言，并保留时间窗口切换、趋势图查看、信号检索和人格画像分析。
-            </p>
-            <div className="hero-chip-row">
-              {heroRows.map(([label, value, tone]) => (
-                <div className={`hero-chip hero-chip--${tone}`} key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
+          </div>
+          <div className="hero__meta-panel" aria-label="Dashboard metadata">
+            <div>
+              <span>Schema</span>
+              <strong>{schemaVersion || "未加载"}</strong>
             </div>
-            <div className="hero__meta">
-              Schema: {schemaVersion || "未加载"} · 生成时间：{generatedAtText} · 覆盖天数：{overviewDays}
+            <div>
+              <span>生成时间</span>
+              <strong>{generatedAtText}</strong>
+            </div>
+            <div>
+              <span>覆盖天数</span>
+              <strong>{overviewDays}</strong>
             </div>
             <button className="hero__reload" onClick={onReload} type="button">
-              重新加载 payload
+              刷新数据
             </button>
           </div>
+        </div>
+
+        <div className="hero__matrix">
+          <BorderGlow
+            animated
+            backgroundColor="#fff4df"
+            borderRadius={24}
+            className="hero-glow-shell"
+            colors={["#ff9f5a", "#f5c84f", "#6dbf91"]}
+            fillOpacity={0.22}
+            glowColor="32 93 66"
+            glowIntensity={0.54}
+            glowRadius={18}
+          >
+            <article className="hero__primary-metric">
+              <span>Conversation Pulse</span>
+              <strong>
+                <CountUp to={parseDisplayNumber(totalMessages) || 0} duration={1.6} separator="," />
+              </strong>
+              <p>把聊天量、关系密度和待推进信号压到同一个决策视图。</p>
+            </article>
+          </BorderGlow>
+
+          <div className="hero-chip-row">
+            {heroRows.map(([label, value, tone]) => (
+              <SpotlightCard
+                className={`hero-chip hero-chip--${tone}`}
+                key={label}
+                spotlightColor="rgba(246, 180, 77, 0.18)"
+              >
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </SpotlightCard>
+            ))}
+          </div>
+
           <article className="hero-orbit hero-orbit--steady">
-            <div className="hero-orbit__eyebrow">Conversation Pulse</div>
-            <div className="hero-orbit__value">{totalMessages}</div>
-            <div className="hero-orbit__caption">
-              在 {overviewDays} 天观察窗口内，重点看消息密度、人格信号和待推进对象。
-            </div>
+            <div className="hero-orbit__eyebrow">Message Orbit</div>
             <div className="hero-orbit__spark">
               <MetaList emptyText="暂无摘要指标" rows={orbitRows} />
             </div>
-            <div className="hero-orbit__grid">
-              <div className="orbit-chip">
-                <span>主导情绪</span>
-                <strong>{dominantEmotionLabel}</strong>
-              </div>
-              <div className="orbit-chip">
-                <span>人格推测</span>
-                <strong>{mbtiType}</strong>
-              </div>
-              <div className="orbit-chip">
-                <span>商机联系人</span>
-                <strong>{businessContactCount}</strong>
-              </div>
-              <div className="orbit-chip">
-                <span>待跟进</span>
-                <strong>{pendingFollowupCount}</strong>
-              </div>
-            </div>
           </article>
+
+          <div className="hero-orbit__grid" aria-label="Key signal summary">
+            <SpotlightCard className="orbit-chip" spotlightColor="rgba(23, 224, 177, 0.14)">
+              <span>主导情绪</span>
+              <strong>{dominantEmotionLabel}</strong>
+            </SpotlightCard>
+            <SpotlightCard className="orbit-chip" spotlightColor="rgba(142, 162, 255, 0.16)">
+              <span>人格推测</span>
+              <strong>{mbtiType}</strong>
+            </SpotlightCard>
+            <SpotlightCard className="orbit-chip" spotlightColor="rgba(246, 180, 77, 0.16)">
+              <span>商机联系人</span>
+              <strong>{businessContactCount}</strong>
+            </SpotlightCard>
+            <SpotlightCard className="orbit-chip" spotlightColor="rgba(255, 107, 107, 0.14)">
+              <span>待跟进</span>
+              <strong>{pendingFollowupCount}</strong>
+            </SpotlightCard>
+          </div>
         </div>
       </section>
     );
@@ -522,7 +538,6 @@ function App() {
     ["自动建议", labels.applied_suggestions],
   ];
   const lifeModeToneValue = emotion.persona_modes?.life?.dominant_emotion;
-  const nightRatioText = formatPercent(social.night_message_ratio || 0);
   const pendingFollowupCount = formatNumber(overview.pending_followup_count || 0);
   const phraseItems = speech.top_terms || speech.repeated_phrases || [];
   const privateMessageCount = formatNumber(overview.private_message_count || 0);
@@ -812,6 +827,15 @@ function App() {
 
   return (
     <main className={viewState.shellClassName}>
+      <div className="page-aurora" aria-hidden="true">
+        <Aurora
+          amplitude={0.55}
+          blend={0.34}
+          colorStops={["#ffe2ad", "#ff9f6e", "#8ed2a9"]}
+          speed={0.34}
+        />
+      </div>
+
       <DashboardHero
         avgMessageLength={avgMessageLength}
         businessContactCount={businessContactCount}
@@ -828,19 +852,6 @@ function App() {
         schemaVersion={payload?.schema_version || "未加载"}
         totalMessages={totalMessages}
       />
-
-      {status === "ready" ? (
-        <DashboardRibbon
-          busiestBusinessChatName={busiestBusinessChat?.chat_name}
-          busiestSupportChatName={busiestSupportChat?.chat_name}
-          dominantEmotionLabel={dominantEmotionLabel}
-          mbtiType={mbtiType}
-          medianResponseText={medianResponseText}
-          nightRatioText={nightRatioText}
-          topContactName={topContactRow?.contact_name}
-          topGroupName={topGroupRow?.chat_name}
-        />
-      ) : null}
 
       <section className="toolbar">
         <div className="dock-toolbar">

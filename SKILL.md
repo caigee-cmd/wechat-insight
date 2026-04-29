@@ -18,6 +18,7 @@ description: |
 - 群聊 / 联系人列表
 - feature 层生成
 - Markdown 日报
+- 面向自动化宿主的一键 digest 日报
 - 客户 / 商业分析
 - 联系人标签模板生成与自动建议
 
@@ -65,6 +66,7 @@ description: |
 | `./wechat-insight export` | 导出聊天记录 JSONL | ✅ 可用 |
 | `./wechat-insight features` | 生成 feature 层 | ✅ 可用 |
 | `./wechat-insight daily` | 生成日报 | ✅ 可用 |
+| `./wechat-insight digest` | 一键导出并生成自动化日报 | ✅ 可用 |
 | `./wechat-insight labels` | 生成联系人标签模板 | ✅ 可用 |
 | `./wechat-insight customer` | 生成客户 / 商业分析 | ✅ 可用 |
 | `./wechat-insight report-data` | 汇总展示层统一 JSON 载荷 | ✅ 可用 |
@@ -153,6 +155,23 @@ description: |
 - 互动结构（发出 / 收到 / 系统）
 - Top 会话收发拆分
 - 待跟进信号
+
+#### 3.1 用户想让 OpenClaw / 自动化宿主每天推送沟通摘要
+
+本 skill 不负责定时和推送；OpenClaw 负责调度、推送和失败重试。
+
+推荐让自动化宿主每天执行：
+
+```bash
+./wechat-insight doctor
+./wechat-insight digest --today --stdout
+```
+
+执行规则：
+- `doctor` 非 0：提示用户先人工执行 `./wechat-insight setup`
+- `digest` 返回 0：从 stdout 读取 Markdown，或读取 `DIGEST_REPORT_PATH=...` 指向的文件
+- 当天没有消息：`digest` 仍会返回 0，并生成“暂无可分析消息”的日报
+- 不要在定时任务中执行 `setup`，因为它需要用户登录微信和 Frida 注入
 
 #### 4. 用户想做客户 / 商业分析
 
