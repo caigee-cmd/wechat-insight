@@ -25,18 +25,6 @@
 - 一份本地可直接打开的静态 HTML 报告，适合归档、截图和分享
 - 一个本地交互式 dashboard，适合筛选、查看趋势和关系图
 
-### Dashboard 首页
-
-![Dashboard 首页](docs/screenshots/dashboard-home.png)
-
-### HTML 报告首页
-
-![HTML 报告首页](docs/screenshots/html-report-home.png)
-
-### 社交关系图
-
-![社交关系图](docs/screenshots/html-relationship.png)
-
 如果你准备发 GitHub 或做自媒体内容，这三张图已经够你完成首页展示了。
 
 ## 为什么这个项目值得看

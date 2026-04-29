@@ -28,4 +28,4 @@ dashboard/public/report_payload.json
 # Avoid accidentally committing generated reports copied into the repo
 report_payload*.json
 dashboard_*.html
-
+dashboard-new/
