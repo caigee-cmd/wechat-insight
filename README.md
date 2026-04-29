@@ -25,7 +25,45 @@
 - 一份本地可直接打开的静态 HTML 报告，适合归档、截图和分享
 - 一个本地交互式 dashboard，适合筛选、查看趋势和关系图
 
-如果你准备发 GitHub 或做自媒体内容，这三张图已经够你完成首页展示了。
+截图文件统一放在 `docs/screenshots/`，README 里展示的是几个最核心的页面状态。
+
+### Dashboard 关系工作台
+
+![Dashboard 关系工作台](docs/screenshots/dashboard-persona-overview.png)
+
+展示 dashboard 的主工作台视图：总消息量、覆盖天数、消息结构、人格推测、情绪底色和待跟进数量会被压到同一个决策界面里，适合快速判断这段时间的整体聊天状态。
+
+### 情绪分布
+
+![情绪分布](docs/screenshots/dashboard-emotion-distribution.png)
+
+展示高级分析里的情绪结构。这里不是医学或心理诊断，而是基于聊天文本的启发式统计，用来观察表达更偏积极、平稳，还是更容易出现焦虑、愤怒和消极信号。
+
+### MBTI 推测
+
+![MBTI 推测](docs/screenshots/dashboard-mbti-profile.png)
+
+展示基于聊天行为反推的四维倾向，包括能量来源、信息偏好、决策方式和行动节奏。它更适合作为表达风格参考，不应当当成正式人格测试结果。
+
+### 待跟进客户
+
+![待跟进客户](docs/screenshots/dashboard-followup-customers.png)
+
+展示客户维度聚合出的待处理项。它会把私聊里的问题、排期、负面反馈和疑似商机集中到一个列表里，方便优先处理最值得继续跟进的人和事。
+
+### HTML 报告首页
+
+![HTML 报告首页](docs/screenshots/html-report-home.png)
+
+展示静态 HTML 报告入口。它适合离线归档、截图分享，也适合不想启动 React dashboard 时快速查看一次完整分析结果。
+
+### 社交关系图
+
+![社交关系图](docs/screenshots/html-relationship.png)
+
+展示会话和联系人之间的关系结构。高频群聊、私聊联系人和互动强度会被可视化出来，用来观察注意力主要流向哪些关系节点。
+
+如果你准备发 GitHub 或做自媒体内容，这几张图已经够你完成首页展示了。
 
 ## 为什么这个项目值得看
 
