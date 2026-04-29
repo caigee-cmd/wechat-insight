@@ -39,7 +39,7 @@ export default function ActivitySection({
           <div className="panel__header">
             <div>
               <h2>社交关系图</h2>
-              <p className="panel__subtle">中心是你自己，上层是高频群聊，下层是高频私聊联系人，连线粗细代表互动密度。</p>
+              <p className="panel__subtle">中心是你自己，群聊在上半球，私聊在下半球，球体会持续缓慢旋转，节点大小代表互动强度。</p>
             </div>
           </div>
           {showRelationshipMap ? (

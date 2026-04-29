@@ -230,19 +230,21 @@ STAGE_LABELS = {
 }
 
 PHRASE_LAYOUT_PRESETS = [
-    {"accent": "sea", "x": 14, "y": 33, "width": 27, "mobile_span": 2, "drift_x": -10, "drift_y": -6, "rotate": -1.8},
-    {"accent": "ink", "x": 60, "y": 29, "width": 24, "mobile_span": 2, "drift_x": 8, "drift_y": 2, "rotate": 1.4},
-    {"accent": "gold", "x": 26, "y": 6, "width": 21, "mobile_span": 1, "drift_x": -5, "drift_y": 5, "rotate": -0.9},
-    {"accent": "sea", "x": 55, "y": 63, "width": 27, "mobile_span": 2, "drift_x": 6, "drift_y": -5, "rotate": 1.1},
-    {"accent": "ink", "x": 2, "y": 59, "width": 21, "mobile_span": 1, "drift_x": -8, "drift_y": 4, "rotate": -1.2},
-    {"accent": "gold", "x": 76, "y": 8, "width": 17, "mobile_span": 1, "drift_x": 5, "drift_y": -4, "rotate": 1.2},
-    {"accent": "sea", "x": 34, "y": 76, "width": 18, "mobile_span": 1, "drift_x": -4, "drift_y": 6, "rotate": -0.7},
-    {"accent": "ink", "x": 43, "y": 0, "width": 18, "mobile_span": 1, "drift_x": 7, "drift_y": -3, "rotate": 0.8},
-    {"accent": "gold", "x": 81, "y": 48, "width": 15, "mobile_span": 1, "drift_x": 6, "drift_y": 5, "rotate": -0.6},
-    {"accent": "sea", "x": 7, "y": 13, "width": 15, "mobile_span": 1, "drift_x": -3, "drift_y": 4, "rotate": 0.9},
-    {"accent": "ink", "x": 23, "y": 56, "width": 17, "mobile_span": 1, "drift_x": 4, "drift_y": -5, "rotate": 0.5},
-    {"accent": "gold", "x": 63, "y": 80, "width": 17, "mobile_span": 1, "drift_x": -5, "drift_y": 4, "rotate": -0.8},
+    {"accent": "sea", "lane": "mid", "x": 14, "y": 33, "width": 27, "mobile_span": 2, "drift_x": -10, "drift_y": -6, "rotate": -1.8},
+    {"accent": "ink", "lane": "mid", "x": 60, "y": 29, "width": 24, "mobile_span": 2, "drift_x": 8, "drift_y": 2, "rotate": 1.4},
+    {"accent": "gold", "lane": "top", "x": 26, "y": 6, "width": 21, "mobile_span": 1, "drift_x": -5, "drift_y": 5, "rotate": -0.9},
+    {"accent": "sea", "lane": "bottom", "x": 55, "y": 63, "width": 27, "mobile_span": 2, "drift_x": 6, "drift_y": -5, "rotate": 1.1},
+    {"accent": "ink", "lane": "mid", "x": 2, "y": 59, "width": 21, "mobile_span": 1, "drift_x": -8, "drift_y": 4, "rotate": -1.2},
+    {"accent": "gold", "lane": "top", "x": 76, "y": 8, "width": 17, "mobile_span": 1, "drift_x": 5, "drift_y": -4, "rotate": 1.2},
+    {"accent": "sea", "lane": "bottom", "x": 34, "y": 76, "width": 18, "mobile_span": 1, "drift_x": -4, "drift_y": 6, "rotate": -0.7},
+    {"accent": "ink", "lane": "top", "x": 43, "y": 0, "width": 18, "mobile_span": 1, "drift_x": 7, "drift_y": -3, "rotate": 0.8},
+    {"accent": "gold", "lane": "mid", "x": 81, "y": 48, "width": 15, "mobile_span": 1, "drift_x": 6, "drift_y": 5, "rotate": -0.6},
+    {"accent": "sea", "lane": "top", "x": 7, "y": 13, "width": 15, "mobile_span": 1, "drift_x": -3, "drift_y": 4, "rotate": 0.9},
+    {"accent": "ink", "lane": "mid", "x": 23, "y": 56, "width": 17, "mobile_span": 1, "drift_x": 4, "drift_y": -5, "rotate": 0.5},
+    {"accent": "gold", "lane": "bottom", "x": 63, "y": 80, "width": 17, "mobile_span": 1, "drift_x": -5, "drift_y": 4, "rotate": -0.8},
 ]
+
+PHRASE_ACCENTS = ["sea", "ink", "gold"]
 
 
 def format_number(value, digits=0):
@@ -270,6 +272,25 @@ def emotion_tone(value):
         "angry": "rose",
         "neutral": "ink",
     }.get(value, "ink")
+
+
+def resolve_phrase_accent_seed(text):
+    source = str(text or "").strip()
+    if not source:
+        return PHRASE_ACCENTS[0]
+    hash_value = 0
+    for char in source:
+        hash_value = (hash_value + ord(char)) % len(PHRASE_ACCENTS)
+    return PHRASE_ACCENTS[hash_value]
+
+
+def build_phrase_focus_summary(count, is_top, top_count, total_count):
+    share = format_percent(count / total_count) if total_count else "--"
+    if is_top:
+        return "当前高频池里最突出的表达"
+    if count == top_count:
+        return f"与最高频并列，占当前高频池 {share}"
+    return f"比最高频少 {top_count - count} 次，占当前高频池 {share}"
 
 
 def format_percent(value):
@@ -451,6 +472,12 @@ def render_phrase_cloud(items, empty_text="暂无明显高频表达"):
     if not rows:
         return f'<div class="empty-state">{escape_text(empty_text)}</div>'
     max_count = max(max(1, int(item.get("count", 1))) for item in rows)
+    top_phrase = rows[0]
+    top_count = max(1, int(top_phrase.get("count", 1)))
+    total_count = sum(max(0, int(item.get("count", 0) or 0)) for item in rows)
+    top_accent = resolve_phrase_accent_seed(top_phrase.get("text"))
+    top_lane = PHRASE_LAYOUT_PRESETS[0].get("lane", "mid")
+    top_summary = build_phrase_focus_summary(top_count, True, top_count, total_count)
     chips = []
     for index, item in enumerate(rows):
         text = (item.get("text") or "").strip()
@@ -459,10 +486,19 @@ def render_phrase_cloud(items, empty_text="暂无明显高频表达"):
         size = 0.98 + normalized * 0.9
         weight = 540 + round(normalized * 180)
         preset = PHRASE_LAYOUT_PRESETS[index % len(PHRASE_LAYOUT_PRESETS)]
+        accent = resolve_phrase_accent_seed(text)
         duration = 7.2 + index * 0.45
         delay = -index * 0.52
+        data_attrs = build_html_data_attrs({
+            "eyebrow": "Top Phrase" if index == 0 else "Phrase Focus",
+            "title": text,
+            "value": f"{count}次",
+            "summary": build_phrase_focus_summary(count, index == 0, top_count, total_count),
+            "accent": accent,
+            "lane": preset.get("lane", "mid"),
+        })
         chips.append(
-            f'<article class="phrase-chip phrase-chip--{preset["accent"]}" '
+            f'<article class="phrase-chip phrase-chip--{accent} {"phrase-chip--active" if index == 0 else ""}" {data_attrs} tabindex="0" '
             f'style="--x:{preset["x"]}%;--y:{preset["y"]}%;--width:{preset["width"]}%;'
             f'--span-mobile:{preset["mobile_span"]};'
             f'--drift-x:{preset["drift_x"]}px;--drift-y:{preset["drift_y"]}px;'
@@ -475,8 +511,16 @@ def render_phrase_cloud(items, empty_text="暂无明显高频表达"):
         )
     if not chips:
         return f'<div class="empty-state">{escape_text(empty_text)}</div>'
+    cloud_attrs = build_html_data_attrs({
+        "default_eyebrow": "Top Phrase",
+        "default_title": top_phrase.get("text", ""),
+        "default_value": f"{top_count}次",
+        "default_summary": top_summary,
+        "default_accent": top_accent,
+        "default_lane": top_lane,
+    })
     return (
-        '<div class="phrase-cloud" aria-label="口癖排版云">'
+        f'<div class="phrase-cloud phrase-cloud--lane-{top_lane} phrase-cloud--tone-{top_accent}" aria-label="口癖排版云" {cloud_attrs}>'
         '<svg class="phrase-cloud__paths" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">'
         '<path d="M2 22 C 18 12, 30 14, 43 26 S 72 40, 98 18"></path>'
         '<path d="M0 50 C 18 40, 31 43, 42 50 S 70 60, 100 48"></path>'
@@ -484,7 +528,7 @@ def render_phrase_cloud(items, empty_text="暂无明显高频表达"):
         '<ellipse cx="50" cy="48" rx="15.5" ry="12.5"></ellipse>'
         "</svg>"
         '<div class="phrase-cloud__guides" aria-hidden="true"><span></span><span></span><span></span></div>'
-        '<div class="phrase-cloud__core" aria-hidden="true"><span>Phrase Flow</span><strong>词语流场</strong><small>高频表达围绕中轴反复折返</small></div>'
+        f'<div class="phrase-cloud__core phrase-cloud__core--{top_accent}"><span class="phrase-cloud__core-eyebrow">Top Phrase</span><strong class="phrase-cloud__core-title">{escape_text(top_phrase.get("text", ""))}</strong><b class="phrase-cloud__core-value">{escape_text(str(top_count) + "次")}</b><small class="phrase-cloud__core-summary">{escape_text(top_summary)}</small></div>'
         + "".join(chips)
         + "</div>"
     )
@@ -1613,6 +1657,12 @@ def render_html(payload):
       background: linear-gradient(90deg, #d69e2e, #f5b546);
     }}
     .phrase-cloud {{
+      --phrase-guide-color: rgba(23,33,33,0.12);
+      --phrase-track-stroke: rgba(23,49,62,0.12);
+      --phrase-ellipse-stroke: rgba(15,118,110,0.18);
+      --phrase-active-line: rgba(15,118,110,0.62);
+      --phrase-active-guide: rgba(15,118,110,0.34);
+      --phrase-active-glow: rgba(43,212,191,0.16);
       position: relative;
       min-height: 520px;
       padding: 22px;
@@ -1649,11 +1699,16 @@ def render_html(payload):
       display: grid;
       grid-template-rows: repeat(3, 1fr);
       pointer-events: none;
-      opacity: 0.22;
     }}
     .phrase-cloud__guides span {{
       align-self: center;
-      border-top: 1px dashed rgba(23,33,33,0.12);
+      border-top: 1px dashed var(--phrase-guide-color);
+      opacity: 0.24;
+      transition:
+        border-color 180ms ease,
+        opacity 180ms ease,
+        filter 180ms ease,
+        transform 180ms ease;
     }}
     .phrase-cloud__guides span:nth-child(2) {{
       width: 78%;
@@ -1674,15 +1729,56 @@ def render_html(payload):
     .phrase-cloud__paths path,
     .phrase-cloud__paths ellipse {{
       fill: none;
-      stroke: rgba(23,49,62,0.12);
+      stroke: var(--phrase-track-stroke);
       stroke-width: 1.2;
       stroke-linecap: round;
       stroke-dasharray: 4 7;
+      opacity: 0.52;
+      transition:
+        stroke 180ms ease,
+        stroke-width 180ms ease,
+        opacity 180ms ease,
+        filter 180ms ease;
     }}
     .phrase-cloud__paths ellipse {{
-      stroke: rgba(15,118,110,0.18);
+      stroke: var(--phrase-ellipse-stroke);
       stroke-width: 1.6;
       stroke-dasharray: none;
+      opacity: 0.82;
+    }}
+    .phrase-cloud--tone-sea {{
+      --phrase-active-line: rgba(15,118,110,0.62);
+      --phrase-active-guide: rgba(15,118,110,0.34);
+      --phrase-active-glow: rgba(43,212,191,0.16);
+      --phrase-ellipse-stroke: rgba(15,118,110,0.22);
+    }}
+    .phrase-cloud--tone-ink {{
+      --phrase-active-line: rgba(23,49,62,0.68);
+      --phrase-active-guide: rgba(23,49,62,0.32);
+      --phrase-active-glow: rgba(129,170,194,0.14);
+      --phrase-ellipse-stroke: rgba(23,49,62,0.2);
+    }}
+    .phrase-cloud--tone-gold {{
+      --phrase-active-line: rgba(183,121,31,0.7);
+      --phrase-active-guide: rgba(183,121,31,0.34);
+      --phrase-active-glow: rgba(245,181,70,0.18);
+      --phrase-ellipse-stroke: rgba(183,121,31,0.22);
+    }}
+    .phrase-cloud--lane-top .phrase-cloud__paths path:nth-of-type(1),
+    .phrase-cloud--lane-mid .phrase-cloud__paths path:nth-of-type(2),
+    .phrase-cloud--lane-bottom .phrase-cloud__paths path:nth-of-type(3) {{
+      stroke: var(--phrase-active-line);
+      stroke-width: 2.6;
+      opacity: 1;
+      filter: drop-shadow(0 0 10px var(--phrase-active-glow));
+    }}
+    .phrase-cloud--lane-top .phrase-cloud__guides span:nth-child(1),
+    .phrase-cloud--lane-mid .phrase-cloud__guides span:nth-child(2),
+    .phrase-cloud--lane-bottom .phrase-cloud__guides span:nth-child(3) {{
+      border-top-color: var(--phrase-active-guide);
+      opacity: 0.92;
+      filter: drop-shadow(0 0 8px var(--phrase-active-glow));
+      transform: translateX(-4px);
     }}
     .phrase-cloud__core {{
       position: absolute;
@@ -1707,6 +1803,21 @@ def render_html(payload):
         0 24px 60px rgba(16,24,40,0.18),
         inset 0 1px 0 rgba(255,255,255,0.12);
     }}
+    .phrase-cloud__core--sea {{
+      background:
+        radial-gradient(circle at 50% 18%, rgba(43,212,191,0.26), transparent 42%),
+        linear-gradient(160deg, rgba(23,49,62,0.96), rgba(15,118,110,0.84));
+    }}
+    .phrase-cloud__core--ink {{
+      background:
+        radial-gradient(circle at 50% 20%, rgba(129,170,194,0.24), transparent 44%),
+        linear-gradient(160deg, rgba(18,31,39,0.98), rgba(34,61,76,0.88));
+    }}
+    .phrase-cloud__core--gold {{
+      background:
+        radial-gradient(circle at 50% 18%, rgba(245,181,70,0.28), transparent 42%),
+        linear-gradient(160deg, rgba(89,51,10,0.96), rgba(183,121,31,0.88));
+    }}
     .phrase-cloud__core span,
     .phrase-cloud__core small {{
       font-size: 11px;
@@ -1719,6 +1830,19 @@ def render_html(payload):
       line-height: 0.96;
       letter-spacing: -0.05em;
       font-family: "Avenir Next", "IBM Plex Sans", sans-serif;
+      text-wrap: balance;
+    }}
+    .phrase-cloud__core b {{
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+    }}
+    .phrase-cloud__core small {{
+      line-height: 1.45;
+      text-transform: none;
+      letter-spacing: 0.04em;
+      opacity: 0.8;
     }}
     .phrase-chip {{
       --phrase-accent: #17313e;
@@ -1747,6 +1871,8 @@ def render_html(payload):
       animation: phrase-drift var(--duration) ease-in-out infinite alternate;
       animation-delay: var(--delay);
       backdrop-filter: blur(12px);
+      transition: box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
+      outline: none;
     }}
     .phrase-chip::before {{
       content: "";
@@ -1787,6 +1913,31 @@ def render_html(payload):
     }}
     .phrase-chip--gold::after {{
       box-shadow: 0 0 24px rgba(214,158,46,0.22);
+    }}
+    .phrase-chip--active {{
+      z-index: 3;
+      animation-play-state: paused;
+      filter: saturate(1.05);
+    }}
+    .phrase-chip--ink.phrase-chip--active {{
+      border-color: rgba(23,49,62,0.18);
+      box-shadow:
+        0 26px 56px rgba(16,24,40,0.14),
+        inset 0 1px 0 rgba(255,255,255,0.66);
+    }}
+    .phrase-chip--sea.phrase-chip--active {{
+      border-color: rgba(15,118,110,0.22);
+      box-shadow:
+        0 26px 56px rgba(16,24,40,0.14),
+        0 0 0 1px rgba(43,212,191,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.66);
+    }}
+    .phrase-chip--gold.phrase-chip--active {{
+      border-color: rgba(183,121,31,0.22);
+      box-shadow:
+        0 26px 56px rgba(16,24,40,0.14),
+        0 0 0 1px rgba(245,181,70,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.66);
     }}
     .phrase-chip__label {{
       position: relative;
@@ -2457,6 +2608,79 @@ def render_html(payload):
   <script id="report-payload" type="application/json">{serialize_payload_for_script(payload)}</script>
   <script>
     (() => {{
+      const phraseClouds = document.querySelectorAll(".phrase-cloud");
+      phraseClouds.forEach((cloud) => {{
+        const core = cloud.querySelector(".phrase-cloud__core");
+        if (!core) {{
+          return;
+        }}
+
+        const coreEyebrow = core.querySelector(".phrase-cloud__core-eyebrow");
+        const coreTitle = core.querySelector(".phrase-cloud__core-title");
+        const coreValue = core.querySelector(".phrase-cloud__core-value");
+        const coreSummary = core.querySelector(".phrase-cloud__core-summary");
+        const chips = Array.from(cloud.querySelectorAll(".phrase-chip"));
+        const defaultState = {{
+          eyebrow: cloud.dataset.defaultEyebrow || "Top Phrase",
+          title: cloud.dataset.defaultTitle || "",
+          value: cloud.dataset.defaultValue || "",
+          summary: cloud.dataset.defaultSummary || "",
+          accent: cloud.dataset.defaultAccent || "sea",
+          lane: cloud.dataset.defaultLane || "mid",
+        }};
+
+        const applyPhraseState = (state) => {{
+          const accent = state.accent || "sea";
+          const lane = state.lane || "mid";
+          cloud.classList.remove(
+            "phrase-cloud--tone-sea",
+            "phrase-cloud--tone-ink",
+            "phrase-cloud--tone-gold",
+            "phrase-cloud--lane-top",
+            "phrase-cloud--lane-mid",
+            "phrase-cloud--lane-bottom"
+          );
+          cloud.classList.add(`phrase-cloud--tone-${{accent}}`, `phrase-cloud--lane-${{lane}}`);
+          core.classList.remove("phrase-cloud__core--sea", "phrase-cloud__core--ink", "phrase-cloud__core--gold");
+          core.classList.add(`phrase-cloud__core--${{accent}}`);
+          if (coreEyebrow) coreEyebrow.textContent = state.eyebrow || "Top Phrase";
+          if (coreTitle) coreTitle.textContent = state.title || "";
+          if (coreValue) coreValue.textContent = state.value || "";
+          if (coreSummary) coreSummary.textContent = state.summary || "";
+        }};
+
+        const phraseState = (chip) => {{
+          if (!chip) {{
+            return defaultState;
+          }}
+          return {{
+            eyebrow: chip.dataset.eyebrow || "Phrase Focus",
+            title: chip.dataset.title || "",
+            value: chip.dataset.value || "",
+            summary: chip.dataset.summary || "",
+            accent: chip.dataset.accent || "sea",
+            lane: chip.dataset.lane || "mid",
+          }};
+        }};
+
+        const activatePhrase = (chip) => {{
+          chips.forEach((item) => item.classList.toggle("phrase-chip--active", item === chip));
+          applyPhraseState(phraseState(chip));
+        }};
+
+        chips.forEach((chip, index) => {{
+          chip.addEventListener("mouseenter", () => activatePhrase(chip));
+          chip.addEventListener("focus", () => activatePhrase(chip));
+          chip.addEventListener("mouseleave", () => activatePhrase(chips[0] || null));
+          chip.addEventListener("blur", () => activatePhrase(chips[0] || null));
+          if (index === 0) {{
+            chip.classList.add("phrase-chip--active");
+          }}
+        }});
+
+        applyPhraseState(defaultState);
+      }});
+
       const maps = document.querySelectorAll(".relationship-map");
       maps.forEach((map) => {{
         const inspector = map.querySelector(".relationship-inspector");

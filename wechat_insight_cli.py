@@ -44,6 +44,9 @@ def build_parser(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
     daily_parser = subparsers.add_parser("daily", help="基于已导出数据生成日报")
     daily_parser.add_argument("args", nargs=argparse.REMAINDER)
 
+    digest_parser = subparsers.add_parser("digest", help="一键导出并生成自动化日报")
+    digest_parser.add_argument("args", nargs=argparse.REMAINDER)
+
     customer_parser = subparsers.add_parser("customer", help="基于已导出数据生成客户/商业分析")
     customer_parser.add_argument("args", nargs=argparse.REMAINDER)
 
@@ -120,7 +123,7 @@ def run_doctor(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
 
 
 def main(argv=None, extract_module=None, export_module=None, features_module=None,
-         daily_module=None, customer_module=None, labels_module=None,
+         daily_module=None, digest_module=None, customer_module=None, labels_module=None,
          report_data_module=None, html_module=None, dashboard_module=None,
          emotion_module=None, mbti_module=None, speech_module=None, social_module=None,
          config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
@@ -128,7 +131,7 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
 
     if argv and argv[0] in {
         "list", "export", "features", "daily", "customer", "labels",
-        "report-data", "html", "dashboard", "emotion", "mbti", "speech", "social",
+        "digest", "report-data", "html", "dashboard", "emotion", "mbti", "speech", "social",
     }:
         if argv[0] == "list":
             export_module = export_module or load_script_module(
@@ -150,6 +153,11 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
                 "daily", "scripts/analyze/daily.py"
             )
             return daily_module.main(argv[1:])
+        if argv[0] == "digest":
+            digest_module = digest_module or load_script_module(
+                "digest", "scripts/analyze/digest.py"
+            )
+            return digest_module.main(argv[1:])
         if argv[0] == "customer":
             customer_module = customer_module or load_script_module(
                 "customer", "scripts/analyze/customer.py"

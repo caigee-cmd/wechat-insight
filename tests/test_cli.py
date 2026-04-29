@@ -123,6 +123,22 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(calls, [["--input", "/tmp/messages.jsonl"]])
 
+    def test_digest_command_forwards_remaining_args(self):
+        module = load_module()
+        calls = []
+
+        digest_module = types.SimpleNamespace(
+            main=lambda argv=None: calls.append(argv) or 0
+        )
+
+        result = module.main(
+            ["digest", "--today", "--stdout"],
+            digest_module=digest_module,
+        )
+
+        self.assertEqual(result, 0)
+        self.assertEqual(calls, [["--today", "--stdout"]])
+
     def test_features_command_forwards_remaining_args(self):
         module = load_module()
         calls = []

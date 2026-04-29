@@ -68,7 +68,7 @@
 - `setup`：首次提取数据库密钥并生成配置
 - `list` / `export`：列出会话并导出 JSONL
 - `features`：生成统一特征层
-- `daily` / `customer` / `labels`：日报、客户分析、标签模板
+- `daily` / `digest` / `customer` / `labels`：日报、一键自动化日报、客户分析、标签模板
 - `emotion` / `mbti` / `speech` / `social`：高级画像分析
 - `report-data`：汇总统一展示载荷
 - `html`：生成本地可打开的静态网页报告
@@ -131,6 +131,19 @@ pip install -r requirements.txt
 ./wechat-insight customer --input ~/.wechat-insight/data/messages_*.jsonl
 ```
 
+给 OpenClaw / 其他自动化宿主生成当天沟通摘要：
+
+```bash
+./wechat-insight digest --today --stdout
+```
+
+说明：
+
+- `digest` 会先导出当天消息，再生成 Markdown 日报
+- 输出固定包含 `DIGEST_REPORT_PATH=...`，自动化宿主可以读取该文件再推送
+- `--stdout` 会同时把 Markdown 正文打印出来，方便直接作为推送内容
+- 首次初始化仍需人工执行 `./wechat-insight setup`
+
 生成静态网页报告：
 
 ```bash
@@ -157,6 +170,7 @@ npm install
 ./wechat-insight setup
 ./wechat-insight list
 ./wechat-insight export --days 30
+./wechat-insight digest --today --stdout
 ./wechat-insight features --input ~/.wechat-insight/data/messages_*.jsonl
 ./wechat-insight daily --input ~/.wechat-insight/data/messages_*.jsonl
 ./wechat-insight customer --input ~/.wechat-insight/data/messages_*.jsonl
@@ -190,6 +204,25 @@ npm install
 - `social_*.md`
 - `report_payload_*.json`
 - `dashboard_*.html`
+
+## OpenClaw 自动化建议
+
+OpenClaw 负责定时、推送和失败重试；本项目只提供稳定的本地日报生成命令。
+
+推荐任务命令：
+
+```bash
+cd /path/to/wechat-insight
+./wechat-insight doctor
+./wechat-insight digest --today --stdout
+```
+
+自动化策略：
+
+- `doctor` 返回非 0 时，提示用户先人工执行 `setup`
+- `digest` 返回 0 时，读取 stdout 或 `DIGEST_REPORT_PATH` 对应文件
+- 当天没有消息时，`digest` 仍会生成“暂无可分析消息”的日报，避免误报任务失败
+- 不要在定时任务里执行 `setup`，因为它需要登录微信和 Frida 注入
 
 ## 开发
 
