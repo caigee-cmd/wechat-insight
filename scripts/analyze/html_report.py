@@ -8,11 +8,17 @@ import json
 import math
 import os
 import pathlib
+import re
+import shutil
+import subprocess
+import tempfile
 
 
 CONFIG_FILE = os.path.expanduser("~/.config/wechat-insight.json")
 DEFAULT_REPORT_DIR = os.path.expanduser("~/.wechat-insight/reports")
 CURRENT_DIR = pathlib.Path(__file__).resolve().parent
+ROOT_DIR = CURRENT_DIR.parent.parent
+DEFAULT_DASHBOARD_PROJECT_DIR = ROOT_DIR / "dashboard"
 
 
 def load_config(config_path=None):
@@ -2785,19 +2791,135 @@ def render_html(payload):
 """
 
 
-def generate_html_report(payload_path=None, input_path=None, output_file=None,
-                         config_path=None, labels_path=None):
+LOCAL_LINK_RE = re.compile(r"<link\b[^>]*>", re.IGNORECASE)
+LOCAL_SCRIPT_RE = re.compile(
+    r"<script\b(?P<attrs>[^>]*)\bsrc=\"(?P<src>[^\"]+)\"(?P<tail>[^>]*)>\s*</script>",
+    re.IGNORECASE,
+)
+HTML_ATTR_RE = re.compile(r"([a-zA-Z_:][-a-zA-Z0-9_:.]*)=\"([^\"]*)\"")
+
+
+def get_html_attr(tag, name):
+    for key, value in HTML_ATTR_RE.findall(tag):
+        if key.lower() == name.lower():
+            return value
+    return None
+
+
+def ensure_dashboard_project(project_dir=None):
+    project_path = pathlib.Path(project_dir or DEFAULT_DASHBOARD_PROJECT_DIR)
+    package_json = project_path / "package.json"
+    if not package_json.exists():
+        raise FileNotFoundError(f"未找到 dashboard 项目: {package_json}")
+    (project_path / "public").mkdir(parents=True, exist_ok=True)
+    return project_path
+
+
+def resolve_payload(payload_path=None, input_path=None, config_path=None, labels_path=None):
     resolved_payload_path = os.path.expanduser(payload_path) if payload_path else None
     if resolved_payload_path:
-        payload = load_payload(resolved_payload_path)
-    else:
-        payload = REPORT_DATA_MODULE.build_report_data_payload(
-            input_path=input_path,
-            config_path=config_path,
-            labels_path=labels_path,
-        )
-        resolved_payload_path = payload.get("artifacts", {}).get("payload_path")
+        return load_payload(resolved_payload_path), resolved_payload_path
 
+    payload = REPORT_DATA_MODULE.build_report_data_payload(
+        input_path=input_path,
+        config_path=config_path,
+        labels_path=labels_path,
+    )
+    return payload, payload.get("artifacts", {}).get("payload_path")
+
+
+def write_dashboard_payload(project_dir, payload, payload_path=None):
+    project_path = ensure_dashboard_project(project_dir)
+    target_path = project_path / "public" / "report_payload.json"
+    source_path = pathlib.Path(os.path.expanduser(payload_path)) if payload_path else None
+    if source_path and source_path.exists() and source_path.resolve() != target_path.resolve():
+        shutil.copyfile(source_path, target_path)
+    else:
+        target_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    return str(target_path)
+
+
+def ensure_dashboard_dependencies(project_dir):
+    project_path = ensure_dashboard_project(project_dir)
+    if (project_path / "node_modules").exists():
+        return False
+    subprocess.run(["npm", "install"], cwd=str(project_path), check=True)
+    return True
+
+
+def build_react_dashboard(project_dir=None, output_dir=None, skip_install=False):
+    project_path = ensure_dashboard_project(project_dir)
+    if not skip_install:
+        ensure_dashboard_dependencies(project_path)
+
+    resolved_output_dir = pathlib.Path(output_dir or tempfile.mkdtemp(
+        prefix="wechat-insight-dashboard-build-"
+    ))
+    resolved_output_dir.mkdir(parents=True, exist_ok=True)
+
+    env = os.environ.copy()
+    env["WECHAT_INSIGHT_EXPORT_SINGLE"] = "1"
+    env["WECHAT_INSIGHT_EXPORT_OUT_DIR"] = str(resolved_output_dir)
+    subprocess.run(
+        ["npm", "run", "build"],
+        cwd=str(project_path),
+        env=env,
+        check=True,
+    )
+    return str(resolved_output_dir)
+
+
+def resolve_build_asset_path(build_dir, asset_ref):
+    build_path = pathlib.Path(build_dir).resolve()
+    asset_path = (build_path / asset_ref.lstrip("/").lstrip("./")).resolve()
+    if build_path != asset_path and build_path not in asset_path.parents:
+        raise ValueError(f"构建产物引用越界: {asset_ref}")
+    return asset_path
+
+
+def inline_dashboard_build(build_dir, payload):
+    build_path = pathlib.Path(build_dir)
+    index_path = build_path / "index.html"
+    html_content = index_path.read_text(encoding="utf-8")
+
+    def inline_stylesheet(match):
+        tag = match.group(0)
+        rel = (get_html_attr(tag, "rel") or "").lower()
+        if "icon" in rel.split():
+            return '<link rel="icon" href="data:,">'
+        if rel != "stylesheet":
+            return tag
+        href = get_html_attr(tag, "href")
+        if not href:
+            return tag
+        css = resolve_build_asset_path(build_path, href).read_text(encoding="utf-8")
+        return f"<style>\n{css}\n</style>"
+
+    def inline_script(match):
+        src = match.group("src")
+        js = resolve_build_asset_path(build_path, src).read_text(encoding="utf-8")
+        attrs = f"{match.group('attrs')}{match.group('tail')}"
+        script_type = get_html_attr(f"<script {attrs}>", "type") or "module"
+        return f'<script type="{escape_text(script_type)}">\n{js}\n</script>'
+
+    html_content = LOCAL_LINK_RE.sub(inline_stylesheet, html_content)
+    html_content = LOCAL_SCRIPT_RE.sub(inline_script, html_content)
+
+    payload_json = serialize_payload_for_script(payload)
+    payload_script = (
+        '<script id="report-payload" type="application/json">'
+        f"{payload_json}</script>"
+    )
+    if 'id="report-payload"' not in html_content:
+        html_content = html_content.replace("</body>", f"    {payload_script}\n  </body>")
+    return html_content
+
+
+def generate_legacy_html_report(payload, resolved_payload_path=None, output_file=None,
+                                config_path=None):
     html_content = render_html(payload)
     report_path = os.path.expanduser(output_file) if output_file else build_default_output_path(
         payload,
@@ -2814,7 +2936,72 @@ def generate_html_report(payload_path=None, input_path=None, output_file=None,
         "payload_path": resolved_payload_path,
         "report_path": report_path,
         "title": "WeChat Insight Dashboard",
+        "renderer": "legacy",
     }
+
+
+def generate_react_dashboard_report(payload, resolved_payload_path=None, output_file=None,
+                                    config_path=None, project_dir=None,
+                                    skip_install=False):
+    project_path = ensure_dashboard_project(project_dir)
+    write_dashboard_payload(project_path, payload, resolved_payload_path)
+
+    report_path = os.path.expanduser(output_file) if output_file else build_default_output_path(
+        payload,
+        payload_path=resolved_payload_path,
+        config_path=config_path,
+    )
+    report_dir = os.path.dirname(report_path)
+    if report_dir:
+        os.makedirs(report_dir, exist_ok=True)
+
+    with tempfile.TemporaryDirectory(prefix="wechat-insight-dashboard-export-") as build_dir:
+        built_dir = build_react_dashboard(
+            project_dir=project_path,
+            output_dir=build_dir,
+            skip_install=skip_install,
+        )
+        html_content = inline_dashboard_build(built_dir, payload)
+
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    return {
+        "payload_path": resolved_payload_path,
+        "report_path": report_path,
+        "title": "WeChat Insight Dashboard",
+        "renderer": "react",
+        "project_dir": str(project_path),
+    }
+
+
+def generate_html_report(payload_path=None, input_path=None, output_file=None,
+                         config_path=None, labels_path=None, renderer="react",
+                         project_dir=None, skip_install=False):
+    payload, resolved_payload_path = resolve_payload(
+        payload_path=payload_path,
+        input_path=input_path,
+        config_path=config_path,
+        labels_path=labels_path,
+    )
+
+    if renderer == "legacy":
+        return generate_legacy_html_report(
+            payload,
+            resolved_payload_path=resolved_payload_path,
+            output_file=output_file,
+            config_path=config_path,
+        )
+    if renderer == "react":
+        return generate_react_dashboard_report(
+            payload,
+            resolved_payload_path=resolved_payload_path,
+            output_file=output_file,
+            config_path=config_path,
+            project_dir=project_dir,
+            skip_install=skip_install,
+        )
+    raise ValueError(f"未知 renderer: {renderer}")
 
 
 def main(argv=None):
@@ -2824,6 +3011,14 @@ def main(argv=None):
     parser.add_argument("--output", "-o", help="输出 HTML 路径")
     parser.add_argument("--labels", help="联系人标签文件路径")
     parser.add_argument("--config", help="配置文件路径", default=None)
+    parser.add_argument(
+        "--renderer",
+        choices=["react", "legacy"],
+        default="react",
+        help="react 导出当前 dashboard；legacy 导出旧 Python 静态模板",
+    )
+    parser.add_argument("--project-dir", help="dashboard 项目目录")
+    parser.add_argument("--skip-install", action="store_true", help="跳过 npm install")
     args = parser.parse_args(argv)
 
     result = generate_html_report(
@@ -2832,11 +3027,15 @@ def main(argv=None):
         output_file=args.output,
         config_path=args.config,
         labels_path=args.labels,
+        renderer=args.renderer,
+        project_dir=args.project_dir,
+        skip_install=args.skip_install,
     )
 
     print("=" * 50)
     print("WeChat Insight HTML Report")
     print("=" * 50)
+    print(f"渲染器: {result['renderer']}")
     print(f"Payload 路径: {result['payload_path']}")
     print(f"HTML 路径: {result['report_path']}")
     print("=" * 50)

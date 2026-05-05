@@ -18,7 +18,7 @@ def load_module():
 
 
 class HtmlReportTests(unittest.TestCase):
-    def test_generate_html_report_builds_single_file_dashboard_from_payload(self):
+    def test_generate_html_report_can_build_legacy_python_template(self):
         module = load_module()
 
         payload = {
@@ -203,6 +203,7 @@ class HtmlReportTests(unittest.TestCase):
             result = module.generate_html_report(
                 payload_path=str(payload_path),
                 output_file=str(output_path),
+                renderer="legacy",
             )
 
             self.assertEqual(result["payload_path"], str(payload_path))
@@ -234,6 +235,77 @@ class HtmlReportTests(unittest.TestCase):
             self.assertNotIn(">negotiating<", html)
             self.assertNotIn(">supporting<", html)
             self.assertNotIn(">positive<", html)
+
+    def test_generate_html_report_exports_react_dashboard_by_default(self):
+        module = load_module()
+
+        payload = {
+            "schema_version": "report-data.v1",
+            "generated_at": "2026-04-26T10:30:00",
+            "overview": {"total_messages": 3},
+            "sections": {},
+            "artifacts": {"payload_path": "/tmp/report_payload.json"},
+        }
+
+        with tempfile.TemporaryDirectory() as td:
+            temp_dir = pathlib.Path(td)
+            payload_path = temp_dir / "report_payload.json"
+            output_path = temp_dir / "dashboard.html"
+            project_dir = temp_dir / "dashboard"
+            build_dir = temp_dir / "react-build"
+            assets_dir = build_dir / "assets"
+            (project_dir / "public").mkdir(parents=True)
+            (project_dir / "package.json").write_text("{}", encoding="utf-8")
+            assets_dir.mkdir(parents=True)
+            payload_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            (build_dir / "index.html").write_text(
+                """
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <link rel="icon" href="./favicon.svg">
+    <link rel="stylesheet" crossorigin href="./assets/index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" crossorigin src="./assets/index.js"></script>
+  </body>
+</html>
+""",
+                encoding="utf-8",
+            )
+            (assets_dir / "index.css").write_text("body { color: rgb(1, 2, 3); }", encoding="utf-8")
+            (assets_dir / "index.js").write_text(
+                'window.__wechatInsightReactDashboard = "loaded";',
+                encoding="utf-8",
+            )
+
+            original_builder = module.build_react_dashboard
+            module.build_react_dashboard = lambda **_kwargs: str(build_dir)
+            try:
+                result = module.generate_html_report(
+                    payload_path=str(payload_path),
+                    output_file=str(output_path),
+                    project_dir=str(project_dir),
+                    skip_install=True,
+                )
+            finally:
+                module.build_react_dashboard = original_builder
+
+            html = output_path.read_text(encoding="utf-8")
+
+        self.assertEqual(result["renderer"], "react")
+        self.assertEqual(result["report_path"], str(output_path))
+        self.assertIn('id="report-payload"', html)
+        self.assertIn('"schema_version": "report-data.v1"', html)
+        self.assertIn("body { color: rgb(1, 2, 3); }", html)
+        self.assertIn("window.__wechatInsightReactDashboard", html)
+        self.assertNotIn("favicon.svg", html)
+        self.assertNotIn('href="./assets/index.css"', html)
+        self.assertNotIn('src="./assets/index.js"', html)
 
 
 if __name__ == "__main__":

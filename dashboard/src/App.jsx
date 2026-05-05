@@ -25,6 +25,7 @@ import {
   readInitialUiState,
   writeUiStateQuery,
 } from "./lib/presentation";
+import { loadDashboardPayload } from "./lib/payloadLoader";
 import Aurora from "./components/reactbits/Aurora";
 import BorderGlow from "./components/reactbits/BorderGlow";
 import CountUp from "./components/reactbits/CountUp";
@@ -444,11 +445,7 @@ function App() {
       setStatus("loading");
       setError("");
       try {
-        const response = await fetch(`/report_payload.json?t=${Date.now()}`);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const nextPayload = await response.json();
+        const nextPayload = await loadDashboardPayload();
         if (!cancelled) {
           setPayload(nextPayload);
           setStatus("ready");
@@ -812,11 +809,7 @@ function App() {
     setStatus("loading");
     setError("");
     try {
-      const response = await fetch(`/report_payload.json?t=${Date.now()}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const nextPayload = await response.json();
+      const nextPayload = await loadDashboardPayload();
       setPayload(nextPayload);
       setStatus("ready");
     } catch (reloadError) {

@@ -163,10 +163,18 @@ pip install -r requirements.txt
 ./wechat-insight html --input ~/.wechat-insight/data/messages_*.jsonl
 ```
 
+默认会导出当前 React dashboard 的单文件 HTML；如果需要旧版 Python 静态模板，可以加 `--renderer legacy`。
+
 启动本地 dashboard：
 
 ```bash
 ./wechat-insight dashboard --input ~/.wechat-insight/data/messages_*.jsonl
+```
+
+也可以让 dashboard 命令先导出、再直接启动前端，不生成静态 HTML：
+
+```bash
+./wechat-insight dashboard --days 7 --port 4180
 ```
 
 如果你想手动准备前端依赖：
