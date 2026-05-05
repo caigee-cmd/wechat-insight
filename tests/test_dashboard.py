@@ -3,7 +3,9 @@ import json
 import os
 import pathlib
 import tempfile
+import types
 import unittest
+from unittest import mock
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -72,6 +74,87 @@ class DashboardTests(unittest.TestCase):
                 "npm run dev -- --host 127.0.0.1 --port 4173",
             ],
         )
+
+    def test_build_export_args_supports_dashboard_date_export(self):
+        module = load_module()
+
+        args = module.build_export_args(
+            days=7,
+            chats="客户群",
+            contacts="陈毅",
+            config_path="/tmp/config.json",
+            output_dir="~/wechat-data",
+        )
+
+        self.assertEqual(
+            args,
+            [
+                "--days", "7",
+                "--chats", "客户群",
+                "--contacts", "陈毅",
+                "--config", "/tmp/config.json",
+                "--output", os.path.expanduser("~/wechat-data"),
+            ],
+        )
+
+    def test_run_dashboard_exports_before_payload_when_days_is_provided(self):
+        module = load_module()
+
+        with tempfile.TemporaryDirectory() as td:
+            temp_dir = pathlib.Path(td)
+            project_dir = temp_dir / "dashboard"
+            data_dir = temp_dir / "data"
+            payload_path = temp_dir / "report_payload.json"
+            exported_path = data_dir / "messages_last7d.jsonl"
+            (project_dir / "public").mkdir(parents=True)
+            (project_dir / "package.json").write_text("{}", encoding="utf-8")
+            data_dir.mkdir()
+
+            export_calls = []
+
+            def fake_export(argv=None):
+                export_calls.append(argv)
+                exported_path.write_text(
+                    json.dumps({"content": "hello"}, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+                return 0
+
+            def fake_build_report_data_payload(input_path=None, **_kwargs):
+                self.assertEqual(input_path, str(exported_path))
+                payload_path.write_text(
+                    json.dumps({
+                        "schema_version": "report-data.v1",
+                        "artifacts": {"payload_path": str(payload_path)},
+                    }),
+                    encoding="utf-8",
+                )
+                return {"artifacts": {"payload_path": str(payload_path)}}
+
+            original_builder = module.REPORT_DATA_MODULE.build_report_data_payload
+            module.REPORT_DATA_MODULE.build_report_data_payload = fake_build_report_data_payload
+            try:
+                with mock.patch.object(
+                    module.subprocess,
+                    "run",
+                    return_value=types.SimpleNamespace(returncode=0),
+                ) as run_mock:
+                    result = module.run_dashboard(
+                        project_dir=str(project_dir),
+                        days=7,
+                        export_output=str(data_dir),
+                        export_main=fake_export,
+                        skip_install=True,
+                        port=4180,
+                    )
+            finally:
+                module.REPORT_DATA_MODULE.build_report_data_payload = original_builder
+
+        self.assertEqual(export_calls, [["--days", "7", "--output", str(data_dir)]])
+        self.assertEqual(result["input_path"], str(exported_path))
+        self.assertEqual(result["source_payload_path"], str(payload_path))
+        self.assertEqual(result["port"], 4180)
+        run_mock.assert_called_once()
 
 
 if __name__ == "__main__":
