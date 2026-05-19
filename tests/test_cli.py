@@ -219,22 +219,6 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(calls, [["--payload", "/tmp/report_payload.json", "--output", "/tmp/dashboard.html"]])
 
-    def test_dashboard_command_forwards_remaining_args(self):
-        module = load_module()
-        calls = []
-
-        dashboard_module = types.SimpleNamespace(
-            main=lambda argv=None: calls.append(argv) or 0
-        )
-
-        result = module.main(
-            ["dashboard", "--payload", "/tmp/report_payload.json", "--port", "4173"],
-            dashboard_module=dashboard_module,
-        )
-
-        self.assertEqual(result, 0)
-        self.assertEqual(calls, [["--payload", "/tmp/report_payload.json", "--port", "4173"]])
-
     def test_emotion_command_forwards_remaining_args(self):
         module = load_module()
         calls = []

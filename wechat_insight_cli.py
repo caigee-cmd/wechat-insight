@@ -59,9 +59,6 @@ def build_parser(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
     html_parser = subparsers.add_parser("html", help="生成本地可打开的静态 HTML 报告")
     html_parser.add_argument("args", nargs=argparse.REMAINDER)
 
-    dashboard_parser = subparsers.add_parser("dashboard", help="启动本地交互式 dashboard")
-    dashboard_parser.add_argument("args", nargs=argparse.REMAINDER)
-
     emotion_parser = subparsers.add_parser("emotion", help="生成情绪周期分析")
     emotion_parser.add_argument("args", nargs=argparse.REMAINDER)
 
@@ -124,14 +121,14 @@ def run_doctor(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
 
 def main(argv=None, extract_module=None, export_module=None, features_module=None,
          daily_module=None, digest_module=None, customer_module=None, labels_module=None,
-         report_data_module=None, html_module=None, dashboard_module=None,
+         report_data_module=None, html_module=None,
          emotion_module=None, mbti_module=None, speech_module=None, social_module=None,
          config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
     argv = list(sys.argv[1:] if argv is None else argv)
 
     if argv and argv[0] in {
         "list", "export", "features", "daily", "customer", "labels",
-        "digest", "report-data", "html", "dashboard", "emotion", "mbti", "speech", "social",
+        "digest", "report-data", "html", "emotion", "mbti", "speech", "social",
     }:
         if argv[0] == "list":
             export_module = export_module or load_script_module(
@@ -173,11 +170,6 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
                 "html_report", "scripts/analyze/html_report.py"
             )
             return html_module.main(argv[1:])
-        if argv[0] == "dashboard":
-            dashboard_module = dashboard_module or load_script_module(
-                "dashboard", "scripts/analyze/dashboard.py"
-            )
-            return dashboard_module.main(argv[1:])
         if argv[0] == "emotion":
             emotion_module = emotion_module or load_script_module(
                 "emotion", "scripts/analyze/emotion.py"

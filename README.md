@@ -8,42 +8,38 @@
 
 - 导出数据和统一特征层
 - 日报、客户分析、待跟进信号
-- 情绪分析、MBTI 推测、口癖统计、社交图谱
-- 本地可打开的静态 HTML 报告
-- 本地交互式 React dashboard
+- 情绪分析、MBTI 推测、口癖统计、社交图谱（均为启发式分析，仅供参考）
+- 本地可打开、内置交互式 React 工作台的单文件 HTML 报告
 
 ## 一句话看懂
 
-`WeChat Insight = 微信聊天记录导出 + 分析引擎 + HTML 报告 + 本地 dashboard`
+`WeChat Insight = 微信聊天记录导出 + 分析引擎 + 单文件 HTML 报告（内置交互式工作台）`
 
 它不是单纯“把聊天导出来”，而是把聊天变成一套可以看的洞察结果。
 
 ## 效果预览
 
-你最终会得到两种展示结果：
-
-- 一份本地可直接打开的静态 HTML 报告，适合归档、截图和分享
-- 一个本地交互式 dashboard，适合筛选、查看趋势和关系图
+你最终会得到一份**单文件 HTML 报告**：双击就能开、可以发邮件/微信，里面内联了一个交互式 React 工作台（可筛选、切窗口、看趋势和关系图）。
 
 截图文件统一放在 `docs/screenshots/`，README 里展示的是几个最核心的页面状态。
 
-### Dashboard 关系工作台
+### 关系工作台总览
 
-![Dashboard 关系工作台](docs/screenshots/dashboard-persona-overview.png)
+![关系工作台总览](docs/screenshots/dashboard-persona-overview.png)
 
-展示 dashboard 的主工作台视图：总消息量、覆盖天数、消息结构、人格推测、情绪底色和待跟进数量会被压到同一个决策界面里，适合快速判断这段时间的整体聊天状态。
+展示报告的主工作台视图：总消息量、覆盖天数、消息结构、人格推测、情绪底色和待跟进数量会被压到同一个决策界面里，适合快速判断这段时间的整体聊天状态。
 
-### 情绪分布
+### 情绪分布（启发式）
 
 ![情绪分布](docs/screenshots/dashboard-emotion-distribution.png)
 
-展示高级分析里的情绪结构。这里不是医学或心理诊断，而是基于聊天文本的启发式统计，用来观察表达更偏积极、平稳，还是更容易出现焦虑、愤怒和消极信号。
+展示高级分析里的情绪结构。属于启发式分析（基于聊天文本的统计规则推测，不是医学诊断、心理测评或模型级结论），结果仅供参考。用来观察表达更偏积极、平稳，还是更容易出现焦虑、愤怒和消极信号。
 
-### MBTI 推测
+### MBTI 推测（启发式）
 
 ![MBTI 推测](docs/screenshots/dashboard-mbti-profile.png)
 
-展示基于聊天行为反推的四维倾向，包括能量来源、信息偏好、决策方式和行动节奏。它更适合作为表达风格参考，不应当当成正式人格测试结果。
+展示基于聊天行为反推的四维倾向，包括能量来源、信息偏好、决策方式和行动节奏。属于启发式分析（基于表达风格统计推测，不是正式人格测评），结果仅供参考。
 
 ### 待跟进客户
 
@@ -56,7 +52,7 @@
 
 - **全本地**：默认不上传云端，数据留在自己机器上
 - **链路完整**：从密钥提取、消息导出、特征层、分析层到展示层全部打通
-- **可直接分享**：可以导出静态 HTML，也可以跑本地 dashboard
+- **可直接分享**：导出单文件 HTML，里面内联了完整的交互式工作台
 - **不止做统计**：除了消息量和活跃时段，还会给出客户机会、待跟进、语言风格和关系画像
 
 ## 你最终能看到什么
@@ -64,8 +60,8 @@
 - 哪些群和联系人最活跃
 - 你最近的聊天节奏、昼夜分布、响应时延
 - 哪些私聊有商业机会、哪些对话值得跟进
-- 你的高频表达、口癖和常见说话风格
-- 基于聊天表达风格的 `MBTI` 和情绪启发式画像
+- 你的高频表达、口癖和常见说话风格（启发式）
+- 基于聊天表达风格的 `MBTI` 和情绪画像（启发式，仅供参考）
 - 一份可直接打开的本地网页报告
 
 ## 适合谁
@@ -73,7 +69,7 @@
 - 想分析自己的微信社交结构和聊天节奏
 - 想把微信私聊整理成客户线索和待跟进列表
 - 想做“个人数据分析 / 数字分身 / 关系画像”类内容分享
-- 想把分析结果做成网页、截图或 dashboard 展示
+- 想把分析结果做成网页、截图展示
 
 ## 当前能力
 
@@ -82,10 +78,9 @@
 - `list` / `export`：列出会话并导出 JSONL
 - `features`：生成统一特征层
 - `daily` / `digest` / `customer` / `labels`：日报、一键自动化日报、客户分析、标签模板
-- `emotion` / `mbti` / `speech` / `social`：高级画像分析
+- `emotion` / `mbti` / `speech` / `social`：高级画像分析（启发式，仅供参考）
 - `report-data`：汇总统一展示载荷
-- `html`：生成本地可打开的静态网页报告
-- `dashboard`：启动本地 React dashboard
+- `html`：生成本地可打开的单文件 HTML 报告（内置交互式 React 工作台）
 
 ## 使用边界
 
@@ -93,12 +88,12 @@
 - 需要本机已安装并登录过 `微信 Mac 4.x`
 - 默认是本地处理，不上传云端
 - 请只处理你自己有权处理的数据
-- `MBTI / 情绪 / 口癖 / 社交图谱` 当前属于启发式分析，结果仅供参考
+- `MBTI / 情绪 / 口癖 / 社交图谱` 属于启发式分析（基于聊天文本的统计规则推测，不是医学诊断、心理测评或模型级结论），结果仅供参考
 
 ## 环境要求
 
 - Python `3.9+`
-- Node.js `18+`，用于 React dashboard，`20+` 更稳
+- Node.js `18+`，用于 build HTML 报告中的 React 工作台，`20+` 更稳
 
 ## 快速开始
 
@@ -163,21 +158,9 @@ pip install -r requirements.txt
 ./wechat-insight html --input ~/.wechat-insight/data/messages_*.jsonl
 ```
 
-默认会导出当前 React dashboard 的单文件 HTML；如果需要旧版 Python 静态模板，可以加 `--renderer legacy`。
+默认会把 `dashboard/` 这个 React 工作台 build + inline 成单文件 HTML；如果需要旧版 Python 静态模板，可以加 `--renderer legacy`。
 
-启动本地 dashboard：
-
-```bash
-./wechat-insight dashboard --input ~/.wechat-insight/data/messages_*.jsonl
-```
-
-也可以让 dashboard 命令先导出、再直接启动前端，不生成静态 HTML：
-
-```bash
-./wechat-insight dashboard --days 7 --port 4180
-```
-
-如果你想手动准备前端依赖：
+`html` 命令首次运行会自动跑 `npm install`。如果想提前装好前端依赖加快首次出图：
 
 ```bash
 cd dashboard
@@ -202,7 +185,6 @@ npm install
 ./wechat-insight social --input ~/.wechat-insight/data/messages_*.jsonl
 ./wechat-insight report-data --input ~/.wechat-insight/data/messages_*.jsonl
 ./wechat-insight html --input ~/.wechat-insight/data/messages_*.jsonl
-./wechat-insight dashboard --input ~/.wechat-insight/data/messages_*.jsonl
 ```
 
 ## 输出位置
@@ -253,7 +235,7 @@ cd /path/to/wechat-insight
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-构建 dashboard：
+构建 React 工作台（开发用，`html` 命令会自动跑）：
 
 ```bash
 cd dashboard
@@ -291,7 +273,7 @@ wechat-insight/
 
 ## 说明
 
-- dashboard 中部分动效组件参考并改造自 React Bits
+- HTML 报告内嵌的 React 工作台中，部分动效组件参考并改造自 React Bits
 - 当前仓库默认不包含真实聊天数据与真实分析产物
 
 ## License
