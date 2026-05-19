@@ -8,6 +8,17 @@ description: |
 
 # 分析微信聊天记录 Analyzing WeChat Chats
 
+> **前置依赖**：本 skill 不是自包含的，运行需要 `./wechat-insight` CLI（仓库：https://github.com/caigee-cmd/wechat-insight）。
+>
+> 触发本 skill 时按以下顺序判断当前 CLI 位置：
+> 1. 当前目录有 `wechat-insight` 可执行文件 → 直接用 `./wechat-insight ...`
+> 2. `~/.local/share/wechat-insight/wechat-insight` 存在 → `cd ~/.local/share/wechat-insight` 后用 `./wechat-insight ...`
+> 3. 都没有 → 提示用户、并提议执行一行安装（macOS only）：
+>    ```bash
+>    curl -sL https://raw.githubusercontent.com/caigee-cmd/wechat-insight/main/install.sh | bash
+>    ```
+>    脚本会 clone 仓库到 `~/.local/share/wechat-insight`、创建 venv、安装 Python 依赖。装好后再 `cd` 进去触发本 skill。`./wechat-insight` launcher 会自动使用 `.venv`，不需要手动 `source activate`。
+
 ## 总览
 
 这是一个 **本地微信分析工作台 v1**。

@@ -97,14 +97,23 @@
 
 ## 快速开始
 
+**一行安装**（macOS only，会 clone 到 `~/.local/share/wechat-insight` 并装好 venv 和依赖）：
+
 ```bash
-git clone <your-repo-url>
+curl -sL https://raw.githubusercontent.com/caigee-cmd/wechat-insight/main/install.sh | bash
+```
+
+或手动安装：
+
+```bash
+git clone https://github.com/caigee-cmd/wechat-insight.git
 cd wechat-insight
 
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt
 ```
+
+`./wechat-insight` launcher 会自动使用项目自带的 `.venv`，不需要每次 `source activate`。
 
 先检查环境：
 
