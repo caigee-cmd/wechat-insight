@@ -1,7 +1,14 @@
-#!/usr/bin/env python3
-
-from wechat_insight_cli import main
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+#!/usr/bin/env bash
+# wechat-insight CLI launcher. 自动使用项目自带的 .venv（如果存在），不需要手动 activate.
+# 可通过 WECHAT_INSIGHT_PYTHON 覆盖。
+set -e
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON="${WECHAT_INSIGHT_PYTHON:-}"
+if [[ -z "$PYTHON" ]]; then
+    if [[ -x "$DIR/.venv/bin/python" ]]; then
+        PYTHON="$DIR/.venv/bin/python"
+    else
+        PYTHON="python3"
+    fi
+fi
+exec "$PYTHON" "$DIR/wechat_insight_cli.py" "$@"

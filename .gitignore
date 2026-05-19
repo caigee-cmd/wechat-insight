@@ -5,12 +5,23 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
 .venv/
 venv/
 
 # Editors
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+*.rej
 
 # Logs / temp
 *.log
@@ -20,12 +31,15 @@ tmp/
 # Local browser / automation artifacts
 .playwright-mcp/
 
+# Node (catch-all; dashboard/ 已单独列出，这里防别处再起 npm 项目)
+node_modules/
+
 # Dashboard local dependencies and build output
 dashboard/node_modules/
 dashboard/dist/
 dashboard/public/report_payload.json
 
-# Avoid accidentally committing generated reports copied into the repo
+# Avoid accidentally committing generated reports / exports copied into the repo
 report_payload*.json
 dashboard_*.html
-dashboard-new/
+*.jsonl
