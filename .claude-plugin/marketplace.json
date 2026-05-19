@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "wechat-insight",
+  "description": "把本地微信聊天记录变成关系洞察、客户线索和人格画像的工作台。",
+  "owner": {
+    "name": "caigee-cmd",
+    "url": "https://github.com/caigee-cmd"
+  },
+  "plugins": [
+    {
+      "name": "wechat-insight",
+      "description": "macOS 微信 Mac 4.x 本地分析工具：导出聊天、生成 feature 层、日报、客户线索、HTML 报告和本地 dashboard。",
+      "source": "./plugins/wechat-insight",
+      "category": "productivity",
+      "tags": ["wechat", "chat-analysis", "local-first", "insights", "dashboard", "macos"]
+    }
+  ]
+}
