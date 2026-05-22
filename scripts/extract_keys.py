@@ -169,6 +169,8 @@ def prepare_wechat():
         shutil.copytree(WECHAT_APP, WECHAT_COPY, symlinks=True)
 
     print("  重新签名（去掉 Hardened Runtime）...")
+    run_cmd(f"codesign --remove-signature {WECHAT_COPY}", check=False)
+    run_cmd(f"xattr -cr {WECHAT_COPY}", check=False)
     run_cmd(f"codesign --force --deep --sign - {WECHAT_COPY}")
     print("  ✓ 签名完成")
 
