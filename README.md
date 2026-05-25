@@ -2,7 +2,25 @@
 
 把你的微信聊天记录，变成一个可以本地查看的关系洞察、客户线索和人格画像工作台。
 
+![platform](https://img.shields.io/badge/platform-macOS-black)
+![privacy](https://img.shields.io/badge/%E5%88%86%E6%9E%90%E5%85%A8%E7%A8%8B-%E9%9B%B6%E8%81%94%E7%BD%91-2ea44f)
+![upload](https://img.shields.io/badge/%E8%81%8A%E5%A4%A9%E5%86%85%E5%AE%B9-0%20%E4%B8%8A%E4%BC%A0-2ea44f)
+![license](https://img.shields.io/badge/license-MIT-blue)
+
 > 一个本地优先的微信分析项目：从聊天记录里看到关系结构、商业机会和表达习惯。
+
+**👉 不想安装？[在线看一份示例报告](https://caigee-cmd.github.io/wechat-insight/)（脱敏假数据，无需安装、无需联网）。**
+
+## 🔒 隐私优先（这是这个项目的底线）
+
+读你的微信记录是件很敏感的事，所以这个项目的第一原则是：**你的聊天内容永远不出本机。**
+
+- **分析全程零联网**：导出、特征、分析、出报告，整条链路不访问网络。代码里没有任何 `requests` / `urllib` / `socket` 等出网调用，由 [`tests/test_no_network.py`](./tests/test_no_network.py) 自动断言守护——任何人引入联网依赖，测试都会立刻失败。
+- **可断网实测**：拔掉网线 / 关掉 WiFi 一样能跑完整条分析链路，欢迎自己验证。
+- **唯一的联网**：只发生在装依赖（`pip` / `npm` 拉公共依赖包）和 `setup` 阶段注入 Frida 时，这些都不接触、更不上传你的聊天内容。
+- **开源可审计**：全部逻辑在本仓库，数据产物默认只写到你本机的 `~/.wechat-insight/`。
+
+> 想自己验证"零联网"？跑 `python3 -m unittest discover -s tests -p 'test_*.py'`，其中 `test_no_network` 会扫描整条分析链路。
 
 面向 `macOS + 微信 Mac 4.x`，从本地加密数据库提取聊天记录，生成：
 
@@ -81,6 +99,7 @@
 - `emotion` / `mbti` / `speech` / `social`：高级画像分析（启发式，仅供参考）
 - `report-data`：汇总统一展示载荷
 - `html`：生成本地可打开的单文件 HTML 报告（内置交互式 React 工作台）
+- `share`：生成一张可分享的竖版"关系画像卡"（适配朋友圈/小红书，截图即用）
 
 ## 使用边界
 
@@ -169,6 +188,14 @@ python3 -m venv .venv
 
 默认会把 `dashboard/` 这个 React 工作台 build + inline 成单文件 HTML；如果需要旧版 Python 静态模板，可以加 `--renderer legacy`。
 
+生成一张可分享的"关系画像卡"（竖版单文件 HTML，浏览器打开后截图即可发朋友圈/小红书）：
+
+```bash
+./wechat-insight share --input ~/.wechat-insight/data/messages_*.jsonl
+```
+
+分享卡只挑最有"晒点"的几个结果（消息量、MBTI、情绪底色、口头禅、待跟进数），底部带项目水印，是纯本地、零联网生成的。
+
 `html` 命令首次运行会自动跑 `npm install`。如果想提前装好前端依赖加快首次出图：
 
 ```bash
@@ -194,7 +221,31 @@ npm install
 ./wechat-insight social --input ~/.wechat-insight/data/messages_*.jsonl
 ./wechat-insight report-data --input ~/.wechat-insight/data/messages_*.jsonl
 ./wechat-insight html --input ~/.wechat-insight/data/messages_*.jsonl
+./wechat-insight share --input ~/.wechat-insight/data/messages_*.jsonl
 ```
+
+## 在线 Demo 与脱敏样例
+
+不想安装、想先看效果？
+
+- **在线示例报告**：<https://caigee-cmd.github.io/wechat-insight/>（由脱敏虚构数据生成，无真实聊天内容）
+- **脱敏样例数据**：仓库内置 [`docs/sample/messages_sample.jsonl`](docs/sample/messages_sample.jsonl)，用固定随机种子生成的虚构对话，可直接喂给任意命令试跑：
+
+```bash
+# 用样例数据本地出一份完整报告（无需配置微信）
+./wechat-insight html --input docs/sample/messages_sample.jsonl
+# 或出一张分享卡
+./wechat-insight share --input docs/sample/messages_sample.jsonl
+```
+
+重建样例与在线 Demo（维护者用）：
+
+```bash
+./scripts/build_demo.sh        # 重新生成 docs/sample 与 docs/demo
+python3 scripts/make_sample_data.py --days 30 --seed 42   # 只重生成样例数据
+```
+
+> 在线 Demo 走 GitHub Pages：仓库 Settings → Pages → Source 选 `Deploy from a branch`、分支 `main`、目录 `/docs` 即可。落地页是 `docs/index.html`，报告在 `docs/demo/index.html`。
 
 ## 输出位置
 
@@ -271,10 +322,15 @@ wechat-insight/
 ├── scripts/
 │   ├── extract_keys.py
 │   ├── export_messages.py
+│   ├── make_sample_data.py   # 生成脱敏样例数据
+│   ├── build_demo.sh         # 一键重建在线 Demo
 │   ├── features/
-│   └── analyze/
+│   └── analyze/              # 含 share_card.py 等分析器
 ├── dashboard/
 ├── docs/
+│   ├── index.html            # GitHub Pages 落地页
+│   ├── demo/                 # 在线示例报告 + 分享卡
+│   └── sample/               # 脱敏样例数据
 ├── tests/
 ├── wechat-insight
 └── wechat_insight_cli.py
