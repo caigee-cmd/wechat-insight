@@ -59,6 +59,9 @@ def build_parser(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
     html_parser = subparsers.add_parser("html", help="生成本地可打开的静态 HTML 报告")
     html_parser.add_argument("args", nargs=argparse.REMAINDER)
 
+    share_parser = subparsers.add_parser("share", help="生成可分享的竖版关系画像卡")
+    share_parser.add_argument("args", nargs=argparse.REMAINDER)
+
     emotion_parser = subparsers.add_parser("emotion", help="生成情绪周期分析")
     emotion_parser.add_argument("args", nargs=argparse.REMAINDER)
 
@@ -123,12 +126,13 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
          daily_module=None, digest_module=None, customer_module=None, labels_module=None,
          report_data_module=None, html_module=None,
          emotion_module=None, mbti_module=None, speech_module=None, social_module=None,
+         share_module=None,
          config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
     argv = list(sys.argv[1:] if argv is None else argv)
 
     if argv and argv[0] in {
         "list", "export", "features", "daily", "customer", "labels",
-        "digest", "report-data", "html", "emotion", "mbti", "speech", "social",
+        "digest", "report-data", "html", "share", "emotion", "mbti", "speech", "social",
     }:
         if argv[0] == "list":
             export_module = export_module or load_script_module(
@@ -170,6 +174,11 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
                 "html_report", "scripts/analyze/html_report.py"
             )
             return html_module.main(argv[1:])
+        if argv[0] == "share":
+            share_module = share_module or load_script_module(
+                "share_card", "scripts/analyze/share_card.py"
+            )
+            return share_module.main(argv[1:])
         if argv[0] == "emotion":
             emotion_module = emotion_module or load_script_module(
                 "emotion", "scripts/analyze/emotion.py"

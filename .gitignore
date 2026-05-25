@@ -43,3 +43,6 @@ dashboard/public/report_payload.json
 report_payload*.json
 dashboard_*.html
 *.jsonl
+
+# …but the脱敏 Demo 数据是故意提交的（虚构、无真实信息）
+!docs/sample/messages_sample.jsonl
