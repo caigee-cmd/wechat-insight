@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>我的微信关系画像 · WeChat Insight</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #05070c; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
+    padding: 40px 16px; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: 540px; max-width: 100%; border-radius: 28px; overflow: hidden;
+    background: radial-gradient(700px 360px at 50% -8%, #1c2740 0%, #0b0f1a 55%, #090c14 100%);
+    border: 1px solid #1e2533; color: #e8eaf0; padding: 44px 40px 28px;
+    box-shadow: 0 40px 120px rgba(0,0,0,.6);
+  }
+  .kicker { font-size: 13px; letter-spacing: 3px; color: #6b7689; text-transform: uppercase; }
+  .title { font-size: 30px; font-weight: 800; letter-spacing: -.5px; margin: 8px 0 4px; }
+  .subtitle { font-size: 13px; color: #8a93a6; margin-bottom: 28px; }
+  .stats { display: flex; gap: 12px; margin-bottom: 28px; }
+  .stat { flex: 1; background: rgba(255,255,255,.03); border: 1px solid #1e2533; border-radius: 16px; padding: 16px 10px; text-align: center; }
+  .stat__num { font-size: 30px; font-weight: 800; line-height: 1; }
+  .stat__label { font-size: 12px; color: #8a93a6; margin-top: 7px; }
+  .block { background: rgba(255,255,255,.03); border: 1px solid #1e2533; border-radius: 18px; padding: 20px; margin-bottom: 16px; }
+  .block__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .block__name { font-size: 13px; color: #8a93a6; letter-spacing: .5px; }
+  .mbti-type { font-size: 34px; font-weight: 900; letter-spacing: 4px; color: #60a5fa; }
+  .dims { display: flex; gap: 10px; }
+  .dim { flex: 1; text-align: center; }
+  .dim__letter { font-size: 22px; font-weight: 800; color: #cfe0ff; }
+  .dim__label { font-size: 11px; color: #8a93a6; margin-top: 4px; }
+  .row { display: flex; gap: 16px; }
+  .row .block { flex: 1; }
+  .big { font-size: 26px; font-weight: 800; }
+  .muted { font-size: 12px; color: #8a93a6; }
+  .terms { display: flex; flex-wrap: wrap; gap: 8px; }
+  .term { font-size: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(96,165,250,.12); color: #9ec5ff; border: 1px solid rgba(96,165,250,.25); }
+  .footer { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; padding-top: 18px; border-top: 1px solid #1a212e; }
+  .brand { font-size: 13px; font-weight: 700; color: #cdd5e3; }
+  .brand span { color: #4ade80; }
+  .link { font-size: 11px; color: #6b7689; }
+  .disclaimer { font-size: 10.5px; color: #5c6577; margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="kicker">WeChat Insight</div>
+    <div class="title">我的微信关系画像</div>
+    <div class="subtitle">基于近 30 天聊天记录 · 全本地分析</div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat__num" style="color:#e8eaf0">479</div><div class="stat__label">条消息</div></div>
+      <div class="stat"><div class="stat__num" style="color:#60a5fa">9</div><div class="stat__label">个活跃会话</div></div>
+      <div class="stat"><div class="stat__num" style="color:#4ade80">30</div><div class="stat__label">天跨度</div></div>
+    </div>
+
+    <div class="block">
+      <div class="block__head">
+        <span class="block__name">人格推测（启发式）</span>
+        <span class="mbti-type">ESFJ</span>
+      </div>
+      <div class="dims"><div class="dim"><div class="dim__letter">E</div><div class="dim__label">能量来源</div></div><div class="dim"><div class="dim__letter">S</div><div class="dim__label">信息偏好</div></div><div class="dim"><div class="dim__letter">F</div><div class="dim__label">决策方式</div></div><div class="dim"><div class="dim__letter">J</div><div class="dim__label">行动节奏</div></div></div>
+    </div>
+
+    <div class="row">
+      <div class="block">
+        <div class="block__name">情绪底色</div>
+        <div class="big" style="color:#4ade80; margin-top:8px">积极</div>
+      </div>
+      <div class="block">
+        <div class="block__name">最活跃时段</div>
+        <div class="big" style="margin-top:8px">11:00</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block__name" style="margin-bottom:12px">我的口头禅</div>
+      <div class="terms"><span class="term">放心</span><span class="term">钱够花的</span><span class="term">收到</span></div>
+    </div>
+
+    <div class="row">
+      <div class="block">
+        <div class="block__name">商机联系人</div>
+        <div class="big" style="color:#4ade80; margin-top:8px">6</div>
+      </div>
+      <div class="block">
+        <div class="block__name">待跟进</div>
+        <div class="big" style="color:#fbbf24; margin-top:8px">3</div>
+      </div>
+      <div class="block">
+        <div class="block__name">中位回复</div>
+        <div class="big" style="margin-top:8px">14 分钟</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="brand">WeChat <span>Insight</span></div>
+      <div class="link">github.com/caigee-cmd/wechat-insight</div>
+    </div>
+    <div class="disclaimer">
+      数据全程在本机分析，聊天内容未上传。MBTI / 情绪 / 口头禅均为启发式推测，仅供娱乐参考。
+    </div>
+  </div>
+</body>
+</html>
