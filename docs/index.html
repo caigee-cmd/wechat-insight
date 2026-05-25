@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeChat Insight · 把微信聊天记录变成关系洞察工作台</title>
+  <meta name="description" content="本地优先的微信聊天分析工具：关系洞察、客户线索、人格画像，全程零联网，聊天内容不出本机。" />
+  <meta property="og:title" content="WeChat Insight" />
+  <meta property="og:description" content="把微信聊天记录变成关系洞察、客户线索和人格画像的本地工作台。全程零联网。" />
+  <style>
+    :root {
+      --bg: #0b0d12; --panel: #14171f; --line: #232733;
+      --text: #e8eaf0; --muted: #9aa1b0;
+      --accent: #4ade80; --accent2: #60a5fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 60%);
+      color: var(--text); font: 16px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 72px 24px 96px; }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .badge {
+      font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      background: rgba(74,222,128,.12); color: var(--accent); border: 1px solid rgba(74,222,128,.3);
+    }
+    .badge.blue { background: rgba(96,165,250,.12); color: var(--accent2); border-color: rgba(96,165,250,.3); }
+    h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -.5px; }
+    .lead { font-size: 19px; color: var(--muted); margin: 0 0 32px; max-width: 640px; }
+    .cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+      padding: 13px 22px; border-radius: 12px; font-weight: 600; font-size: 15px;
+    }
+    .btn.primary { background: var(--accent); color: #06210f; }
+    .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 48px 0; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+    .card h3 { margin: 0 0 6px; font-size: 16px; }
+    .card p { margin: 0; font-size: 14px; color: var(--muted); }
+    .install { background: #0f1420; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; overflow-x: auto; color: #cfe3ff; }
+    .section-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 40px 0 12px; }
+    footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+    a { color: var(--accent2); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="badges">
+      <span class="badge">分析全程零联网</span>
+      <span class="badge">聊天内容 0 上传</span>
+      <span class="badge blue">本地优先</span>
+      <span class="badge blue">macOS</span>
+    </div>
+
+    <h1>把你的微信聊天记录，<br/>变成一份关系洞察工作台。</h1>
+    <p class="lead">
+      从本地微信数据里看到：谁最值得跟进、你的聊天节奏、语言风格，
+      还有一份基于聊天行为的人格与情绪画像。全程在你自己的电脑上完成，聊天内容永不出本机。
+    </p>
+
+    <div class="cta">
+      <a class="btn primary" href="./demo/index.html">▶ 看一份示例报告（无需安装）</a>
+      <a class="btn ghost" href="./demo/share.html">🪪 看分享卡示例</a>
+      <a class="btn ghost" href="https://github.com/caigee-cmd/wechat-insight">★ 在 GitHub 上查看</a>
+    </div>
+    <p class="note">下面这份示例报告由一份<strong>脱敏的虚构数据</strong>生成，不含任何真实聊天内容，仅用于展示效果。</p>
+
+    <div class="grid">
+      <div class="card"><h3>📊 关系工作台</h3><p>总消息量、活跃会话、昼夜节奏、响应时延，压到同一个决策界面。</p></div>
+      <div class="card"><h3>🎯 待跟进客户</h3><p>把私聊里的提问、报价、负面反馈和疑似商机聚成一个待办列表。</p></div>
+      <div class="card"><h3>🧠 人格 / 情绪画像</h3><p>基于聊天表达风格的 MBTI 与情绪倾向（启发式，仅供参考）。</p></div>
+      <div class="card"><h3>🔒 全本地</h3><p>导出、分析、出报告整条链路零联网，由自动化测试守护。</p></div>
+    </div>
+
+    <div class="section-title">一行安装（macOS）</div>
+    <div class="install">curl -sL https://raw.githubusercontent.com/caigee-cmd/wechat-insight/main/install.sh | bash</div>
+    <p class="note">需要 macOS + 已登录的微信 Mac 4.x。详细步骤见 <a href="https://github.com/caigee-cmd/wechat-insight#快速开始">README</a>。</p>
+
+    <footer>
+      WeChat Insight · MIT License ·
+      <a href="https://github.com/caigee-cmd/wechat-insight">github.com/caigee-cmd/wechat-insight</a><br/>
+      MBTI / 情绪 / 口癖 / 社交图谱均为启发式分析，仅供参考；请只处理你自己有权处理的数据。
+    </footer>
+  </div>
+</body>
+</html>
