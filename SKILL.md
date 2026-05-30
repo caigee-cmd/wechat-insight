@@ -1,7 +1,7 @@
 ---
 name: analyzing-wechat-chats
 description: |
-  Use when analyzing, exporting, or reporting on WeChat Mac 4.x local chat history on macOS - extracts encrypted local messages, builds feature layers, and generates daily reports, customer insights, contact labels, and single-file HTML reports with an embedded interactive React workbench.
+  Use when analyzing, exporting, or reporting on WeChat Mac 4.x local chat history on macOS - extracts encrypted local messages, builds feature layers, and generates daily reports, customer insights, contact labels, and a single-file HTML report (a pure-Python narrative slides recap by default).
   触发词：微信分析、分析微信、微信洞察、微信聊天分析、wechat-insight、analyzing-wechat-chats
   当用户提到想分析微信聊天记录、想看聊天报告、想导出微信数据、想看客户线索时，务必使用本 skill。
 ---
@@ -32,15 +32,14 @@ description: |
 - 面向自动化宿主的一键 digest 日报
 - 客户 / 商业分析
 - 联系人标签模板生成与自动建议
+- 单文件 HTML 报告（默认叙事版滑动年报，纯 Python 渲染，不依赖 Node）
+- 可分享的竖版关系画像卡
 
 启发式分析能力（基于聊天文本的统计规则推测，不是医学诊断、心理测评或模型级结论，结果仅供参考）：
 - 情绪分析
 - MBTI 推测
 - 口癖统计
 - 社交图谱
-
-规划中的下一阶段：
-- HTML 报告内嵌工作台的更强交互和视觉增强
 
 ---
 
@@ -71,21 +70,22 @@ description: |
 
 | 命令 | 作用 | 状态 |
 |------|------|------|
-| `./wechat-insight doctor` | 检查配置状态 | ✅ 可用 |
-| `./wechat-insight setup` | 首次提取密钥并生成配置 | ✅ 可用 |
-| `./wechat-insight list` | 列出群聊和联系人 | ✅ 可用 |
-| `./wechat-insight export` | 导出聊天记录 JSONL | ✅ 可用 |
-| `./wechat-insight features` | 生成 feature 层 | ✅ 可用 |
-| `./wechat-insight daily` | 生成日报 | ✅ 可用 |
-| `./wechat-insight digest` | 一键导出并生成自动化日报 | ✅ 可用 |
-| `./wechat-insight labels` | 生成联系人标签模板 | ✅ 可用 |
-| `./wechat-insight customer` | 生成客户 / 商业分析 | ✅ 可用 |
-| `./wechat-insight report-data` | 汇总展示层统一 JSON 载荷 | ✅ 可用 |
-| `./wechat-insight html` | 生成本地可打开的单文件 HTML 报告（内置交互式 React 工作台） | ✅ 可用 |
-| `./wechat-insight emotion` | 情绪分析（启发式） | ✅ 可用 |
-| `./wechat-insight mbti` | MBTI 推测（启发式） | ✅ 可用 |
-| `./wechat-insight speech` | 口癖统计（启发式） | ✅ 可用 |
-| `./wechat-insight social` | 社交图谱（启发式） | ✅ 可用 |
+| `./wechat-insight doctor` | 检查配置状态 | 可用 |
+| `./wechat-insight setup` | 首次提取密钥并生成配置 | 可用 |
+| `./wechat-insight list` | 列出群聊和联系人 | 可用 |
+| `./wechat-insight export` | 导出聊天记录 JSONL | 可用 |
+| `./wechat-insight features` | 生成 feature 层 | 可用 |
+| `./wechat-insight daily` | 生成日报 | 可用 |
+| `./wechat-insight digest` | 一键导出并生成自动化日报 | 可用 |
+| `./wechat-insight labels` | 生成联系人标签模板 | 可用 |
+| `./wechat-insight customer` | 生成客户 / 商业分析 | 可用 |
+| `./wechat-insight report-data` | 汇总展示层统一 JSON 载荷 | 可用 |
+| `./wechat-insight html` | 生成本地可打开的单文件 HTML 报告（默认叙事版滑动年报） | 可用 |
+| `./wechat-insight share` | 生成可分享的竖版关系画像卡 | 可用 |
+| `./wechat-insight emotion` | 情绪分析（启发式） | 可用 |
+| `./wechat-insight mbti` | MBTI 推测（启发式） | 可用 |
+| `./wechat-insight speech` | 口癖统计（启发式） | 可用 |
+| `./wechat-insight social` | 社交图谱（启发式） | 可用 |
 
 ---
 
@@ -357,7 +357,7 @@ description: |
 这意味着：
 - 日报和商业分析已经有稳定底座
 - MBTI / 响应延迟 / 更细社交分析已经接入统一导出链路
-- HTML 报告已经可以直接生成，并内嵌可交互的 React 工作台
+- HTML 报告已经可以直接生成（默认叙事版滑动年报，纯 Python 渲染）
 
 ---
 
@@ -424,6 +424,7 @@ description: |
 - `customer`
 - `report-data`
 - `html`
+- `share`
 - `emotion`
 - `mbti`
 - `speech`
@@ -431,8 +432,5 @@ description: |
 
 已落地的交付层：
 - `report-data`：输出统一展示载荷
-- `html`：生成本地可打开的单文件 HTML 报告（内置交互式 React 工作台）
-
-规划中待落地的交付层：
-- React Bits 风格增强
-- 更强筛选、时间范围切换、图表交互
+- `html`：生成本地可打开的单文件 HTML 报告（默认叙事版滑动年报，纯 Python 渲染）
+- `share`：生成可分享的竖版关系画像卡
