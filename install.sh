@@ -58,6 +58,4 @@ cat <<EOF
   ./wechat-insight export --days 7
   ./wechat-insight daily
   ./wechat-insight html
-
-HTML 报告所需的前端依赖会在首次跑 html 时自动 npm install。
 EOF

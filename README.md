@@ -17,7 +17,7 @@
 
 - **分析全程零联网**：导出、特征、分析、出报告，整条链路不访问网络。代码里没有任何 `requests` / `urllib` / `socket` 等出网调用，由 [`tests/test_no_network.py`](./tests/test_no_network.py) 自动断言守护——任何人引入联网依赖，测试都会立刻失败。
 - **可断网实测**：拔掉网线 / 关掉 WiFi 一样能跑完整条分析链路，欢迎自己验证。
-- **唯一的联网**：只发生在装依赖（`pip` / `npm` 拉公共依赖包）和 `setup` 阶段注入 Frida 时，这些都不接触、更不上传你的聊天内容。
+- **唯一的联网**：只发生在装依赖（`pip` 拉公共依赖包）和 `setup` 阶段注入 Frida 时，这些都不接触、更不上传你的聊天内容。
 - **开源可审计**：全部逻辑在本仓库，数据产物默认只写到你本机的 `~/.wechat-insight/`。
 
 > 想自己验证"零联网"？跑 `python3 -m unittest discover -s tests -p 'test_*.py'`，其中 `test_no_network` 会扫描整条分析链路。
@@ -27,50 +27,25 @@
 - 导出数据和统一特征层
 - 日报、客户分析、待跟进信号
 - 情绪分析、MBTI 推测、口癖统计、社交图谱（均为启发式分析，仅供参考）
-- 本地可打开的单文件 HTML 报告：默认是一份整屏翻页的"叙事版滑动年报"，也可切换成交互式 React 工作台
+- 本地可打开的单文件 HTML 报告：一份整屏翻页的"叙事版滑动年报"，双击即开、适合分享
 
 ## 一句话看懂
 
-`WeChat Insight = 微信聊天记录导出 + 分析引擎 + 单文件 HTML 报告（内置交互式工作台）`
+`WeChat Insight = 微信聊天记录导出 + 分析引擎 + 单文件 HTML 报告`
 
 它不是单纯“把聊天导出来”，而是把聊天变成一套可以看的洞察结果。
 
 ## 效果预览
 
-你最终会得到一份**单文件 HTML 报告**：双击就能开、可以发邮件/微信。默认是一份**叙事版滑动年报**——整屏翻页，从概览、人格、情绪到待跟进一眼看完，适合分享；也可以用 `--renderer react` 导出可筛选切换的交互式工作台。
+你最终会得到一份**单文件 HTML 报告**：双击就能开、可以发邮件/微信。它是一份**叙事版滑动年报**——整屏翻页，从概览、人格、情绪到待跟进一眼看完，适合分享。
 
-截图文件统一放在 `docs/screenshots/`，README 里展示的是几个最核心的页面状态。
-
-### 关系工作台总览
-
-![关系工作台总览](docs/screenshots/dashboard-persona-overview.png)
-
-展示报告的主工作台视图：总消息量、覆盖天数、消息结构、人格推测、情绪底色和待跟进数量会被压到同一个决策界面里，适合快速判断这段时间的整体聊天状态。
-
-### 情绪分布（启发式）
-
-![情绪分布](docs/screenshots/dashboard-emotion-distribution.png)
-
-展示高级分析里的情绪结构。属于启发式分析（基于聊天文本的统计规则推测，不是医学诊断、心理测评或模型级结论），结果仅供参考。用来观察表达更偏积极、平稳，还是更容易出现焦虑、愤怒和消极信号。
-
-### MBTI 推测（启发式）
-
-![MBTI 推测](docs/screenshots/dashboard-mbti-profile.png)
-
-展示基于聊天行为反推的四维倾向，包括能量来源、信息偏好、决策方式和行动节奏。属于启发式分析（基于表达风格统计推测，不是正式人格测评），结果仅供参考。
-
-### 待跟进客户
-
-![待跟进客户](docs/screenshots/dashboard-followup-customers.png)
-
-展示客户维度聚合出的待处理项。它会把私聊里的问题、排期、负面反馈和疑似商机集中到一个列表里，方便优先处理最值得继续跟进的人和事。
-
+想先看效果？**[在线看一份示例报告](https://caigee-cmd.github.io/wechat-insight/)**（脱敏假数据，无需安装、无需联网）。
 
 ## 为什么这个项目值得看
 
 - **全本地**：默认不上传云端，数据留在自己机器上
 - **链路完整**：从密钥提取、消息导出、特征层、分析层到展示层全部打通
-- **可直接分享**：导出单文件 HTML，里面内联了完整的交互式工作台
+- **可直接分享**：导出单文件 HTML 滑动年报，双击即开、可发邮件/微信
 - **不止做统计**：除了消息量和活跃时段，还会给出客户机会、待跟进、语言风格和关系画像
 
 ## 你最终能看到什么
@@ -98,7 +73,7 @@
 - `daily` / `digest` / `customer` / `labels`：日报、一键自动化日报、客户分析、标签模板
 - `emotion` / `mbti` / `speech` / `social`：高级画像分析（启发式，仅供参考）
 - `report-data`：汇总统一展示载荷
-- `html`：生成本地可打开的单文件 HTML 报告（默认叙事版滑动年报；`--renderer react` 出交互式工作台，`--renderer legacy` 出旧版静态模板）
+- `html`：生成本地可打开的单文件 HTML 报告（默认叙事版滑动年报；`--renderer legacy` 出旧版静态模板）
 - `share`：生成一张可分享的竖版"关系画像卡"（适配朋友圈/小红书，截图即用）
 
 ## Roadmap
@@ -130,8 +105,7 @@
 
 ## 环境要求
 
-- Python `3.9+`
-- Node.js `18+`（`20+` 更稳）：仅在用 `--renderer react` 导出 React 工作台时才需要；默认的滑动年报是纯 Python 渲染，不依赖 Node
+- Python `3.9+`（滑动年报是纯 Python 渲染，不依赖 Node）
 
 ## 快速开始
 
@@ -205,7 +179,7 @@ python3 -m venv .venv
 ./wechat-insight html --input ~/.wechat-insight/data/messages_*.jsonl
 ```
 
-默认（`--renderer slides`）用纯 Python 渲染一份叙事版滑动年报，不需要 Node；想要交互式 React 工作台加 `--renderer react`，想要旧版 Python 静态模板加 `--renderer legacy`。
+默认（`--renderer slides`）用纯 Python 渲染一份叙事版滑动年报，不需要 Node；想要旧版 Python 静态模板加 `--renderer legacy`。
 
 生成一张可分享的"关系画像卡"（竖版单文件 HTML，浏览器打开后截图即可发朋友圈/小红书）：
 
@@ -214,13 +188,6 @@ python3 -m venv .venv
 ```
 
 分享卡只挑最有"晒点"的几个结果（消息量、MBTI、情绪底色、口头禅、待跟进数），底部带项目水印，是纯本地、零联网生成的。
-
-用 `--renderer react` 时，`html` 命令首次运行会自动跑 `npm install`。如果想提前装好前端依赖加快首次出图：
-
-```bash
-cd dashboard
-npm install
-```
 
 ## 常用命令
 
@@ -314,14 +281,6 @@ cd /path/to/wechat-insight
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
-构建 React 工作台（开发用，`html` 命令会自动跑）：
-
-```bash
-cd dashboard
-npm ci
-npm run build
-```
-
 ## 本机验收
 
 这个项目以真机链路为准，默认不依赖 GitHub CI。
@@ -345,7 +304,6 @@ wechat-insight/
 │   ├── build_demo.sh         # 一键重建在线 Demo
 │   ├── features/
 │   └── analyze/              # 含 share_card.py 等分析器
-├── dashboard/
 ├── docs/
 │   ├── index.html            # GitHub Pages 落地页
 │   ├── demo/                 # 在线示例报告 + 分享卡
@@ -357,7 +315,6 @@ wechat-insight/
 
 ## 说明
 
-- HTML 报告内嵌的 React 工作台中，部分动效组件参考并改造自 React Bits
 - 当前仓库默认不包含真实聊天数据与真实分析产物
 
 ## License
