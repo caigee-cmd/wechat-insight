@@ -1,7 +1,7 @@
 {
   "name": "wechat-insight",
   "version": "1.0.0",
-  "description": "macOS 微信 Mac 4.x 本地分析工具：从加密数据库提取聊天记录，生成 feature 层、日报、客户线索、情绪/MBTI/口癖估计、HTML 报告和本地 React dashboard。",
+  "description": "macOS 微信 Mac 4.x 本地分析工具：从加密数据库提取聊天记录，生成 feature 层、日报、客户线索、情绪/MBTI/口癖估计、单文件 HTML 滑动年报和可分享关系画像卡。",
   "author": {
     "name": "caigee-cmd",
     "url": "https://github.com/caigee-cmd"
