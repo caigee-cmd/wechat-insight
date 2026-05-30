@@ -236,7 +236,7 @@ class HtmlReportTests(unittest.TestCase):
             self.assertNotIn(">supporting<", html)
             self.assertNotIn(">positive<", html)
 
-    def test_generate_html_report_exports_react_dashboard_by_default(self):
+    def test_generate_html_report_can_export_react_dashboard(self):
         module = load_module()
 
         payload = {
@@ -290,6 +290,7 @@ class HtmlReportTests(unittest.TestCase):
                     payload_path=str(payload_path),
                     output_file=str(output_path),
                     project_dir=str(project_dir),
+                    renderer="react",
                     skip_install=True,
                 )
             finally:
@@ -306,6 +307,87 @@ class HtmlReportTests(unittest.TestCase):
         self.assertNotIn("favicon.svg", html)
         self.assertNotIn('href="./assets/index.css"', html)
         self.assertNotIn('src="./assets/index.js"', html)
+
+    def test_generate_html_report_exports_slides_by_default(self):
+        module = load_module()
+
+        payload = {
+            "schema_version": "report-data.v1",
+            "generated_at": "2026-04-26T10:30:00",
+            "overview": {
+                "total_messages": 479,
+                "text_messages": 453,
+                "active_chat_count": 9,
+                "group_message_count": 149,
+                "private_message_count": 330,
+                "business_contact_count": 6,
+                "date_span_days": 30,
+                "mbti_type": "ESFJ",
+                "avg_message_length": 11.57,
+                "median_response_latency_minutes": 14,
+            },
+            "sections": {
+                "mbti": {
+                    "mbti_type": "ESFJ",
+                    "dimensions": {
+                        "EI": {"letter": "E", "label": "能量来源", "confidence": 0.98},
+                        "SN": {"letter": "S", "label": "信息偏好", "confidence": 0.94},
+                        "TF": {"letter": "F", "label": "决策方式", "confidence": 0.55},
+                        "JP": {"letter": "J", "label": "行动节奏", "confidence": 0.98},
+                    },
+                },
+                "emotion": {
+                    "total_text_messages": 202,
+                    "emotion_distribution": {"positive": 27, "neutral": 175, "negative": 0, "anxious": 0, "angry": 0},
+                },
+                "speech": {"top_terms": [{"text": "放心", "count": 25}, {"text": "收到", "count": 18}]},
+                "daily": {
+                    "top_contacts": [["老王", 84], ["妈妈", 76]],
+                    "top_hours": [["11", 54], ["17", 46]],
+                },
+                "customer": {
+                    "pending_followups": [
+                        {
+                            "contact_name": "客户·林总",
+                            "opportunity_score": 114,
+                            "pending_followup": {
+                                "content": "合同里的交付时间能不能再帮我确认一下？",
+                                "labels": ["商业", "问题"],
+                            },
+                        }
+                    ],
+                },
+            },
+            "artifacts": {"payload_path": "/tmp/report_payload.json"},
+        }
+
+        with tempfile.TemporaryDirectory() as td:
+            temp_dir = pathlib.Path(td)
+            payload_path = temp_dir / "report_payload.json"
+            output_path = temp_dir / "dashboard.html"
+            payload_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
+            result = module.generate_html_report(
+                payload_path=str(payload_path),
+                output_file=str(output_path),
+            )
+
+            html = output_path.read_text(encoding="utf-8")
+
+        self.assertEqual(result["renderer"], "slides")
+        self.assertEqual(result["report_path"], str(output_path))
+        self.assertEqual(html.count('class="slide"'), 9)
+        self.assertIn('data-target="479"', html)
+        self.assertIn("ESFJ", html)
+        self.assertIn("放心", html)
+        self.assertIn("老王", html)
+        self.assertIn("11:00", html)
+        self.assertIn("客户·林总", html)
+        self.assertIn("合同里的交付时间能不能再帮我确认一下？", html)
+        self.assertIn("class SlideDeck", html)
 
 
 if __name__ == "__main__":

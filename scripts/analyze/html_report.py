@@ -39,6 +39,7 @@ def load_script_module(name, relative_path):
 
 
 REPORT_DATA_MODULE = load_script_module("report_data", "scripts/analyze/report_data.py")
+SLIDES_REPORT_MODULE = load_script_module("slides_report", "scripts/analyze/slides_report.py")
 
 
 def clip_text(text, limit=48):
@@ -2940,6 +2941,28 @@ def generate_legacy_html_report(payload, resolved_payload_path=None, output_file
     }
 
 
+def generate_slides_report(payload, resolved_payload_path=None, output_file=None,
+                           config_path=None):
+    html_content = SLIDES_REPORT_MODULE.build_slides_html(payload)
+    report_path = os.path.expanduser(output_file) if output_file else build_default_output_path(
+        payload,
+        payload_path=resolved_payload_path,
+        config_path=config_path,
+    )
+    report_dir = os.path.dirname(report_path)
+    if report_dir:
+        os.makedirs(report_dir, exist_ok=True)
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    return {
+        "payload_path": resolved_payload_path,
+        "report_path": report_path,
+        "title": "WeChat Insight 关系年报",
+        "renderer": "slides",
+    }
+
+
 def generate_react_dashboard_report(payload, resolved_payload_path=None, output_file=None,
                                     config_path=None, project_dir=None,
                                     skip_install=False):
@@ -2976,7 +2999,7 @@ def generate_react_dashboard_report(payload, resolved_payload_path=None, output_
 
 
 def generate_html_report(payload_path=None, input_path=None, output_file=None,
-                         config_path=None, labels_path=None, renderer="react",
+                         config_path=None, labels_path=None, renderer="slides",
                          project_dir=None, skip_install=False):
     payload, resolved_payload_path = resolve_payload(
         payload_path=payload_path,
@@ -2985,6 +3008,13 @@ def generate_html_report(payload_path=None, input_path=None, output_file=None,
         labels_path=labels_path,
     )
 
+    if renderer == "slides":
+        return generate_slides_report(
+            payload,
+            resolved_payload_path=resolved_payload_path,
+            output_file=output_file,
+            config_path=config_path,
+        )
     if renderer == "legacy":
         return generate_legacy_html_report(
             payload,
@@ -3013,9 +3043,9 @@ def main(argv=None):
     parser.add_argument("--config", help="配置文件路径", default=None)
     parser.add_argument(
         "--renderer",
-        choices=["react", "legacy"],
-        default="react",
-        help="react 导出当前 dashboard；legacy 导出旧 Python 静态模板",
+        choices=["slides", "react", "legacy"],
+        default="slides",
+        help="slides 导出叙事版滑动年报（默认）；react 导出交互式 dashboard；legacy 导出旧 Python 静态模板",
     )
     parser.add_argument("--project-dir", help="dashboard 项目目录")
     parser.add_argument("--skip-install", action="store_true", help="跳过 npm install")
