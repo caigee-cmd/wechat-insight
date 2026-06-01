@@ -41,7 +41,10 @@
     .card h3 { margin: 0 0 6px; font-size: 16px; }
     .card p { margin: 0; font-size: 14px; color: var(--muted); }
     .install { background: #0f1420; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
-      font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; overflow-x: auto; color: #cfe3ff; }
+      font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; overflow-x: auto; color: #cfe3ff;
+      white-space: pre; }
+    code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .92em;
+      background: rgba(96,165,250,.12); color: var(--accent2); padding: 1px 6px; border-radius: 5px; }
     .section-title { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 40px 0 12px; }
     footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
     a { color: var(--accent2); }
@@ -74,11 +77,17 @@
       <div class="card"><h3>待跟进客户</h3><p>把私聊里的提问、报价、负面反馈和疑似商机聚成一个待办列表。</p></div>
       <div class="card"><h3>人格 / 情绪画像</h3><p>基于聊天表达风格的 MBTI 与情绪倾向（启发式，仅供参考）。</p></div>
       <div class="card"><h3>全本地</h3><p>导出、分析、出报告整条链路零联网，由自动化测试守护。</p></div>
+      <div class="card"><h3>Claude Code 插件</h3><p>装成 Claude Code 插件后，用自然语言就能驱动整套导出与分析。</p></div>
     </div>
 
     <div class="section-title">一行安装（macOS）</div>
     <div class="install">curl -sL https://raw.githubusercontent.com/caigee-cmd/wechat-insight/main/install.sh | bash</div>
     <p class="note">需要 macOS + 已登录的微信 Mac 4.x。详细步骤见 <a href="https://github.com/caigee-cmd/wechat-insight#快速开始">README</a>。</p>
+
+    <div class="section-title">或装成 Claude Code 插件</div>
+    <div class="install">/plugin marketplace add caigee-cmd/wechat-insight
+/plugin install wechat-insight@wechat-insight</div>
+    <p class="note">装好后直接对 <a href="https://claude.com/claude-code">Claude Code</a> 说“分析我的微信聊天记录”“看看最近的客户线索”，就会触发 <code>analyzing-wechat-chats</code> skill，由它编排导出、分析和出报告。</p>
 
     <footer>
       WeChat Insight · MIT License ·
