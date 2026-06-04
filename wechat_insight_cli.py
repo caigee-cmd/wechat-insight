@@ -50,6 +50,9 @@ def build_parser(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
     customer_parser = subparsers.add_parser("customer", help="基于已导出数据生成客户/商业分析")
     customer_parser.add_argument("args", nargs=argparse.REMAINDER)
 
+    unreplied_parser = subparsers.add_parser("unreplied", help="列出最后一条是对方发来、你还没回的会话")
+    unreplied_parser.add_argument("args", nargs=argparse.REMAINDER)
+
     labels_parser = subparsers.add_parser("labels", help="生成联系人标签引导文件")
     labels_parser.add_argument("args", nargs=argparse.REMAINDER)
 
@@ -124,6 +127,7 @@ def run_doctor(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
 
 def main(argv=None, extract_module=None, export_module=None, features_module=None,
          daily_module=None, digest_module=None, customer_module=None, labels_module=None,
+         unreplied_module=None,
          report_data_module=None, html_module=None,
          emotion_module=None, mbti_module=None, speech_module=None, social_module=None,
          share_module=None,
@@ -133,6 +137,7 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
     if argv and argv[0] in {
         "list", "export", "features", "daily", "customer", "labels",
         "digest", "report-data", "html", "share", "emotion", "mbti", "speech", "social",
+        "unreplied",
     }:
         if argv[0] == "list":
             export_module = export_module or load_script_module(
@@ -164,6 +169,11 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
                 "customer", "scripts/analyze/customer.py"
             )
             return customer_module.main(argv[1:])
+        if argv[0] == "unreplied":
+            unreplied_module = unreplied_module or load_script_module(
+                "unreplied", "scripts/analyze/unreplied.py"
+            )
+            return unreplied_module.main(argv[1:])
         if argv[0] == "report-data":
             report_data_module = report_data_module or load_script_module(
                 "report_data", "scripts/analyze/report_data.py"

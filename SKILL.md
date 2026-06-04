@@ -79,6 +79,7 @@ description: |
 | `./wechat-insight digest` | 一键导出并生成自动化日报 | 可用 |
 | `./wechat-insight labels` | 生成联系人标签模板 | 可用 |
 | `./wechat-insight customer` | 生成客户 / 商业分析 | 可用 |
+| `./wechat-insight unreplied` | 列出最后一条是对方发来、你还没回的会话 | 可用 |
 | `./wechat-insight report-data` | 汇总展示层统一 JSON 载荷 | 可用 |
 | `./wechat-insight html` | 生成本地可打开的单文件 HTML 报告（默认叙事版滑动年报） | 可用 |
 | `./wechat-insight share` | 生成可分享的竖版关系画像卡 | 可用 |
@@ -199,6 +200,27 @@ description: |
 - 每组的高意向机会
 - 每组的售后风险
 - 每组的待跟进
+
+#### 4.1 用户想看"有没有谁的消息我还没回"
+
+当用户问"有没有没回复的消息 / 谁的私信我漏回了 / 最近哪些会话我没跟进"时，用 `unreplied`，
+不要用 `daily` 的待跟进信号——后者只统计命中关键词（商业 / 排期 / 问题等）的消息，
+而 `unreplied` 只看会话最后一条的方向，能覆盖"对方最后发了一句没关键词的话、你没回"的场景。
+
+```bash
+./wechat-insight unreplied                       # 默认只看私聊，列全部
+./wechat-insight unreplied --days 7              # 只看最近 7 天内的未回复
+./wechat-insight unreplied --exclude-ad          # 过滤 labels 中 role 为 ad 的营销号
+./wechat-insight unreplied --include-groups      # 同时纳入群聊
+./wechat-insight unreplied --output ~/un.md      # 同时写入 Markdown 文件
+```
+
+要点：
+- 判定"未回复"基于完整历史（只看 inbound/outbound，忽略系统消息），你最后回过的会话不会误报。
+- 默认只看私聊；群聊用 `--include-groups` 显式纳入。
+- 默认列出全部，不截断（与 `daily` 只展示前 5 条不同）。
+- `--exclude-ad` 依赖先跑过 `labels --apply-suggestions` 生成的 role 字段；没有标签文件时会优雅跳过、过滤 0 个。
+- 每条会附带规则标签（商业 / 问题 / 售后等）作为上下文提示，但不作为过滤条件。
 
 #### 5. 用户想先生成结构化特征层
 
