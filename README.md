@@ -88,6 +88,7 @@ python3 -m venv .venv
 | `features` | 生成统一特征层 |
 | `daily` / `digest` | 日报 / 一键自动化日报 |
 | `customer` / `labels` | 客户分析 / 联系人标签模板 |
+| `unreplied` | 列出最后一条是对方发来、你还没回的会话（支持 `--days` / `--exclude-ad`） |
 | `emotion` / `mbti` / `speech` / `social` | 情绪、MBTI、口癖、社交图谱（启发式，仅供参考） |
 | `report-data` / `html` / `share` | 统一展示载荷 / 滑动年报 / 关系画像卡 |
 
