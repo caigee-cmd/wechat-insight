@@ -192,8 +192,32 @@ def install_frida():
     return True
 
 
+def scan_target_dbs(wechat_base):
+    """Return list of (label, abs_path) for every encrypted DB we care about.
+
+    Probed after Frida is up so we can show real-time match progress per shard.
+    """
+    pattern = os.path.join(wechat_base, "*/db_storage")
+    db_dirs = sorted(glob.glob(pattern))
+    if not db_dirs:
+        return []
+    base = pick_db_base(db_dirs)
+    if not base:
+        return []
+
+    found = []
+    # Subdirs we know contain encrypted SQLite shards.
+    for sub in ("message", "biz_message", "contact", "session"):
+        for p in sorted(glob.glob(os.path.join(base, sub, "*.db"))):
+            if p.endswith("-shm") or p.endswith("-wal"):
+                continue
+            label = os.path.relpath(p, base)
+            found.append((label, p))
+    return found
+
+
 def extract_keys():
-    """Step 4: Run frida to extract keys"""
+    """Step 4: Run frida to extract keys for all shards (persistent hook)."""
     print("\n[4/5] 提取密钥...")
 
     import frida
@@ -209,15 +233,50 @@ def extract_keys():
     wechat_binary = os.path.join(WECHAT_COPY, "Contents", "MacOS", "WeChat")
 
     keys = []
+    seen_salts = set()
+    matched_labels = set()
+    # Filled in after login when db_storage shows up.
+    target_dbs = []
+
+    def refresh_targets():
+        if target_dbs:
+            return
+        candidates = scan_target_dbs(WECHAT_BASE)
+        if candidates:
+            target_dbs.extend(candidates)
+            print(f"  [扫描] 发现 {len(target_dbs)} 个待匹配数据库")
+
+    def try_match_all():
+        if not target_dbs:
+            refresh_targets()
+        newly_matched = []
+        for label, path in target_dbs:
+            if label in matched_labels:
+                continue
+            dk = find_db_key(path, keys)
+            if dk:
+                matched_labels.add(label)
+                newly_matched.append(label)
+        return newly_matched
 
     def on_message(message, data):
         if message['type'] == 'send':
             payload = message['payload']
             if payload.get('type') == 'key':
-                keys.append(payload['data'])
+                entry = payload['data']
+                salt = entry.get('salt', '')
+                if salt and salt in seen_salts:
+                    return
+                if salt:
+                    seen_salts.add(salt)
+                keys.append(entry)
                 with open(FRIDA_LOG, 'a') as f:
-                    f.write(json.dumps(payload['data']) + '\n')
-                print(f"  [KEY] rounds={payload['data']['rounds']} salt={payload['data']['salt'][:16]}... dk={payload['data']['dk'][:16]}...")
+                    f.write(json.dumps(entry) + '\n')
+                newly = try_match_all()
+                for label in newly:
+                    print(f"  [KEY] ✓ 匹配到 {label}  (salt={salt[:16]}...)")
+                if not newly:
+                    print(f"  [KEY] 捕获  salt={salt[:16]}... dk={entry.get('dk','')[:16]}... (待匹配)")
             elif payload.get('type') == 'status':
                 print(f"  {payload['msg']}")
             elif payload.get('type') == 'error':
@@ -225,9 +284,10 @@ def extract_keys():
         elif message['type'] == 'error':
             print(f"  [FRIDA ERROR] {message.get('description', message)}")
 
-    print("  启动 frida hook...")
+    print("  启动 frida hook（常驻模式）...")
     print("  " + "=" * 50)
 
+    session = None
     try:
         print("  正在启动微信...")
         device = frida.get_local_device()
@@ -238,26 +298,46 @@ def extract_keys():
         script.load()
         device.resume(pid)
 
-        print("  微信已启动，请登录微信。")
-        print("  密钥会在微信打开数据库时自动捕获...")
-        print("  你有最多 5 分钟时间完成登录。")
+        print("  微信已启动，请登录。登录后请依次点开最近聊过的会话，")
+        print("  每个会话渲染出来即可（不必滚动）。这会让微信解锁所有分片，")
+        print("  Frida 会实时捕获每个分片的密钥。")
+        print("  全部分片匹配完成会自动退出；也可随时 Ctrl+C 保存已抓到的部分。")
         print(f"  密钥日志: {FRIDA_LOG}")
+        print()
 
-        for i in range(300, 0, -1):
+        # 总等待最多 20 分钟。每 10 秒打印一次进度。
+        TOTAL = 1200
+        for elapsed in range(TOTAL):
             time.sleep(1)
-            if i % 30 == 0:
-                print(f"  剩余 {i} 秒... (已捕获 {len(keys)} 个密钥)")
-            # 一旦捕获到至少3个密钥，多等10秒确保没有遗漏，然后提前结束
-            if len(keys) >= 3 and i <= 290:
-                print(f"  已捕获 {len(keys)} 个密钥，等待10秒确保无遗漏...")
-                time.sleep(10)
+            if elapsed > 0 and elapsed % 10 == 0:
+                refresh_targets()
+                try_match_all()
+                if target_dbs:
+                    missing = [l for l, _ in target_dbs if l not in matched_labels]
+                    print(
+                        f"  [进度] 已抓 {len(keys)} 个 key | "
+                        f"匹配 {len(matched_labels)}/{len(target_dbs)} 个分片 | "
+                        f"还差: {', '.join(missing[:6])}{' ...' if len(missing) > 6 else ''}"
+                    )
+                else:
+                    print(f"  [等待] 已抓 {len(keys)} 个 key，尚未发现 db_storage 目录...")
+
+            # 全部分片都配上 key 了就提前 8 秒兜底，然后退出。
+            if target_dbs and len(matched_labels) == len(target_dbs):
+                print(f"  ✓ 全部 {len(target_dbs)} 个分片已匹配，等待 8 秒兜底...")
+                time.sleep(8)
                 break
 
-        print(f"\n  共捕获 {len(keys)} 个密钥")
-        session.detach()
+        print(f"\n  共捕获 {len(keys)} 个唯一密钥")
 
     except KeyboardInterrupt:
-        print("\n  用户中断")
+        print("\n  用户中断，保存已捕获的密钥...")
+    finally:
+        if session is not None:
+            try:
+                session.detach()
+            except Exception:
+                pass
 
     print("  " + "=" * 50)
 
@@ -265,7 +345,7 @@ def extract_keys():
         print("  [ERROR] 未捕获到任何密钥。请确认已登录微信。")
         sys.exit(1)
 
-    print(f"  ✓ 共捕获 {len(keys)} 个密钥")
+    print(f"  ✓ 共捕获 {len(keys)} 个密钥, 已匹配 {len(matched_labels)} 个分片")
     return keys
 
 
@@ -333,25 +413,28 @@ def detect_databases():
             except:
                 continue
 
-    # Match keys to databases by trying each key
-    db_files = {
-        "message_0": os.path.join(db_base, "message", "message_0.db"),
-        "contact": os.path.join(db_base, "contact", "contact.db"),
-        "session": os.path.join(db_base, "session", "session.db"),
-    }
+    # Match keys to databases by salt. Cover every encrypted shard, not just message_0.
+    candidate_paths = []
+    # Order matters only for log clarity.
+    for sub in ("message", "biz_message", "contact", "session"):
+        for p in sorted(glob.glob(os.path.join(db_base, sub, "*.db"))):
+            if p.endswith("-shm") or p.endswith("-wal"):
+                continue
+            candidate_paths.append(p)
 
     result = {}
-    for db_name, db_path in db_files.items():
-        if not os.path.exists(db_path):
-            print(f"  [WARN] 数据库不存在: {db_path}")
-            continue
-
+    for db_path in candidate_paths:
+        rel = os.path.relpath(db_path, db_base)
+        # Key name: "message_0", "message_3", "biz_message_0", "contact", "session"
+        # (drop the directory + ".db" suffix; contact.db and session.db keep short names
+        #  for backward compat with export_messages.py)
+        stem = os.path.splitext(os.path.basename(db_path))[0]
         matched_key = find_db_key(db_path, keys)
         if matched_key:
-            result[db_name] = matched_key
-            print(f"  ✓ {db_name}.db → 密钥已匹配")
+            result[stem] = matched_key
+            print(f"  ✓ {rel} → key 已匹配")
         else:
-            print(f"  [WARN] {db_name}.db 未匹配到密钥")
+            print(f"  · {rel} → 未匹配 (该分片可能没在本次会话被打开)")
 
     if not result:
         print("\n  [ERROR] 未能匹配任何密钥到数据库")
