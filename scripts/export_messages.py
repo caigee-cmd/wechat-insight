@@ -14,8 +14,10 @@
 import sqlite3
 import struct
 import os
+import re
 import sys
 import json
+import glob
 import hashlib
 import argparse
 from datetime import datetime, timedelta
@@ -33,6 +35,8 @@ SELF_SENDER_FALLBACK = 3
 SELF_SENDER_ID = "__self__"
 SELF_SENDER_NAME = "我"
 SYSTEM_SENDER_IDS = {22}
+# Chat message shard stem: message_0, message_12 ... (NOT message_fts / message_resource).
+_CHAT_SHARD_RE = re.compile(r"^message_\d+$")
 
 MSG_TYPE_LABELS = {
     1: "text",          # 文本
@@ -111,24 +115,46 @@ def decrypt_db(db_path, key_hex, out_path):
 
 
 def decrypt_databases(db_base, tmp_dir):
-    """解密所有需要的数据库"""
+    """解密所有需要的数据库（全部 message_N.db 聊天分片 + contact）。
+
+    返回: {
+        "message_dbs": [path, ...],  # 解密后的 message_N.db 路径（按 N 升序）
+        "contact": path 或 None,
+    }
+    """
     keys = load_keys()
     os.makedirs(tmp_dir, exist_ok=True)
 
-    paths = {
-        "message_0": os.path.join(db_base, "message", "message_0.db"),
-        "contact": os.path.join(db_base, "contact", "contact.db"),
+    def decrypt_one(src, key_hex, out_name):
+        out_path = os.path.join(tmp_dir, out_name)
+        decrypt_db(src, key_hex, out_path)
+        return out_path
+
+    result = {
+        "message_dbs": [],
+        "contact": None,
     }
 
-    decrypted = {}
-    for name, key_hex in keys.items():
-        if name in paths and os.path.exists(paths[name]):
-            out_path = os.path.join(tmp_dir, f"{name}.db")
-            decrypt_db(paths[name], key_hex, out_path)
-            decrypted[name] = out_path
-            print(f"  ✓ 解密 {name}.db")
+    # 只收聊天消息分片 message_N.db，按 keys.json 里的 stem 取 key。
+    # 用 _CHAT_SHARD_RE 排除 message_fts.db / message_resource.db —— 它们也匹配
+    # message_*.db 通配，但不是聊天库，混进导出会产生空/脏数据或报错。
+    for src in sorted(glob.glob(os.path.join(db_base, "message", "message_*.db"))):
+        if src.endswith("-shm") or src.endswith("-wal"):
+            continue
+        stem = os.path.splitext(os.path.basename(src))[0]
+        if not _CHAT_SHARD_RE.match(stem):
+            continue
+        if stem in keys:
+            out = decrypt_one(src, keys[stem], f"{stem}.db")
+            result["message_dbs"].append(out)
+            print(f"  ✓ 解密 {stem}.db")
 
-    return decrypted
+    contact_src = os.path.join(db_base, "contact", "contact.db")
+    if "contact" in keys and os.path.exists(contact_src):
+        result["contact"] = decrypt_one(contact_src, keys["contact"], "contact.db")
+        print(f"  ✓ 解密 contact.db")
+
+    return result
 
 
 # === 联系人解析 ===
@@ -192,8 +218,13 @@ def parse_group_sender(content, contacts):
     return None, None, content
 
 
-def detect_self_sender_id(db_path, contacts, hash_map):
-    """Detect the sender id used for self messages in group chats."""
+def count_self_sender_ids(db_path, contacts, hash_map):
+    """Raw real_sender_id frequencies (from group chats) for self-detection in one shard.
+
+    Returns a {real_sender_id: count} dict with NO fallback applied, so callers can sum
+    counts across shards before picking a winner. A shard with no group-chat evidence
+    returns an empty dict instead of voting for the fallback id.
+    """
     db = sqlite3.connect(db_path)
     counter = {}
 
@@ -224,7 +255,12 @@ def detect_self_sender_id(db_path, contacts, hash_map):
             counter[real_sender_id] = counter.get(real_sender_id, 0) + 1
 
     db.close()
+    return counter
 
+
+def detect_self_sender_id(db_path, contacts, hash_map):
+    """Detect the sender id used for self messages in group chats (single shard)."""
+    counter = count_self_sender_ids(db_path, contacts, hash_map)
     if not counter:
         return SELF_SENDER_FALLBACK
     return max(counter.items(), key=lambda item: item[1])[0]
@@ -264,7 +300,8 @@ def resolve_sender_info(uname, display, is_group, real_sender_id, local_type,
 def export_messages(db_path, contacts, hash_map, output_path,
                     start_ts=None, end_ts=None,
                     target_chats=None, target_contacts=None,
-                    self_sender_id=SELF_SENDER_FALLBACK):
+                    self_sender_id=SELF_SENDER_FALLBACK,
+                    file_mode="w"):
     """
     导出消息为 JSONL 格式
 
@@ -293,7 +330,7 @@ def export_messages(db_path, contacts, hash_map, output_path,
     total_text_messages = 0
     chat_stats = {}
 
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(output_path, file_mode, encoding="utf-8") as f:
         for t in tables:
             hash_id = t.replace("Msg_", "")
             uname = hash_map.get(hash_id, hash_id)
@@ -500,18 +537,37 @@ def main(argv=None):
     # Decrypt databases
     print("解密数据库...")
     decrypted = decrypt_databases(db_base, TMP_DIR)
-    if "message_0" not in decrypted or "contact" not in decrypted:
-        print("[ERROR] 未能解密必要的数据库")
+    message_dbs = decrypted["message_dbs"]
+    if not message_dbs or not decrypted["contact"]:
+        print("[ERROR] 未能解密必要的数据库（需要至少 1 个 message 分片 + contact）")
+        print("[HINT] 请重新跑 setup，登录后依次点开最近聊过的会话，让 Frida 抓全所有分片的 key")
         return 1
+    print(f"共解密 {len(message_dbs)} 个 message 分片")
 
     contacts = get_contact_map(decrypted["contact"])
-    hash_map = get_hash_map(decrypted["message_0"])
-    self_sender_id = detect_self_sender_id(decrypted["message_0"], contacts, hash_map)
+
+    # 合并所有分片的 hash_map（Name2Id 在每个分片里都有，可能各持一份）
+    hash_map = {}
+    for db in message_dbs:
+        hash_map.update(get_hash_map(db))
+
+    # self_sender_id：跨所有分片累计真实 real_sender_id 频次后取众数。
+    # 不能让每个分片各投一票——无群聊证据的分片会投 fallback，分片一多会把真实 id 压掉。
+    self_counter = {}
+    for db in message_dbs:
+        for sid, n in count_self_sender_ids(db, contacts, hash_map).items():
+            self_counter[sid] = self_counter.get(sid, 0) + n
+    self_sender_id = (
+        max(self_counter.items(), key=lambda x: x[1])[0]
+        if self_counter else SELF_SENDER_FALLBACK
+    )
     print(f"检测到 self_sender_id: {self_sender_id}")
 
-    # List mode
+    # List mode (列举只看任一分片即可——hash_map 已合并)
     if args.list_chats:
-        list_all_chats(decrypted["message_0"], contacts, hash_map)
+        # 用最大的那个分片列举，覆盖面最大
+        biggest = max(message_dbs, key=lambda p: os.path.getsize(p))
+        list_all_chats(biggest, contacts, hash_map)
         return 0
 
     # Determine time range
@@ -558,21 +614,40 @@ def main(argv=None):
 
     output_path = os.path.join(output_dir, filename)
 
-    # Export
+    # Export: 逐分片累加到同一个 jsonl，合并 stats
     print(f"\n导出消息到 {output_path}...")
-    stats = export_messages(
-        decrypted["message_0"], contacts, hash_map,
-        output_path,
-        start_ts=start_ts, end_ts=end_ts,
-        target_chats=target_chats,
-        target_contacts=target_contacts,
-        self_sender_id=self_sender_id,
-    )
+    agg = {
+        "total_messages": 0,
+        "total_text_messages": 0,
+        "chat_stats": {},
+    }
+    for idx, db in enumerate(message_dbs):
+        mode = "w" if idx == 0 else "a"
+        shard_label = os.path.basename(db)
+        print(f"  处理 {shard_label} ...")
+        stats = export_messages(
+            db, contacts, hash_map,
+            output_path,
+            start_ts=start_ts, end_ts=end_ts,
+            target_chats=target_chats,
+            target_contacts=target_contacts,
+            self_sender_id=self_sender_id,
+            file_mode=mode,
+        )
+        agg["total_messages"] += stats["total_messages"]
+        agg["total_text_messages"] += stats["total_text_messages"]
+        # chat_stats 是按 chat_name 聚合的，跨分片同名聊天合并
+        for name, info in stats["chat_stats"].items():
+            existing = agg["chat_stats"].setdefault(name, {"count": 0, "is_group": info["is_group"]})
+            existing["count"] += info["count"]
+    agg["chat_count"] = len(agg["chat_stats"])
+    stats = agg
 
     # Write metadata
     meta = {
         "export_time": datetime.now().isoformat(),
         "output_file": filename,
+        "shards_processed": [os.path.basename(p) for p in message_dbs],
         "total_messages": stats["total_messages"],
         "total_text_messages": stats["total_text_messages"],
         "chat_count": stats["chat_count"],
