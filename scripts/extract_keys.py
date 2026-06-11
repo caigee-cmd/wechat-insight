@@ -5,6 +5,7 @@
 """
 
 import os
+import re
 import sys
 import json
 import glob
@@ -192,10 +193,36 @@ def install_frida():
     return True
 
 
-def scan_target_dbs(wechat_base):
-    """Return list of (label, abs_path) for every encrypted DB we care about.
+# Chat message shards only: message_0.db, message_12.db ...
+# Deliberately NOT message_fts.db / message_resource.db / media_0.db / biz_message_*.db /
+# contact_fts.db — those are not part of the chat export. Including them would (a) pollute
+# keys.json so the message_*.db glob later sucks an FTS/resource DB into the export loop, and
+# (b) keep the auto-exit target set from ever completing (they may never be PBKDF2-opened in a
+# session), so the hook would always run the full timeout instead of exiting when done.
+_CHAT_SHARD_RE = re.compile(r"^message_\d+$")
 
-    Probed after Frida is up so we can show real-time match progress per shard.
+
+def wanted_db_paths(db_base):
+    """Encrypted DBs we actually need keys for: chat message shards + contact + session."""
+    paths = []
+    for p in sorted(glob.glob(os.path.join(db_base, "message", "message_*.db"))):
+        if p.endswith("-shm") or p.endswith("-wal"):
+            continue
+        stem = os.path.splitext(os.path.basename(p))[0]
+        if _CHAT_SHARD_RE.match(stem):
+            paths.append(p)
+    for sub, fname in (("contact", "contact.db"), ("session", "session.db")):
+        p = os.path.join(db_base, sub, fname)
+        if os.path.exists(p):
+            paths.append(p)
+    return paths
+
+
+def scan_target_dbs(wechat_base):
+    """Return list of (label, abs_path) for every encrypted DB we need a key for.
+
+    Probed after Frida is up so we can show real-time match progress per shard, and
+    so the hook can auto-exit once every one of these is matched.
     """
     pattern = os.path.join(wechat_base, "*/db_storage")
     db_dirs = sorted(glob.glob(pattern))
@@ -205,15 +232,7 @@ def scan_target_dbs(wechat_base):
     if not base:
         return []
 
-    found = []
-    # Subdirs we know contain encrypted SQLite shards.
-    for sub in ("message", "biz_message", "contact", "session"):
-        for p in sorted(glob.glob(os.path.join(base, sub, "*.db"))):
-            if p.endswith("-shm") or p.endswith("-wal"):
-                continue
-            label = os.path.relpath(p, base)
-            found.append((label, p))
-    return found
+    return [(os.path.relpath(p, base), p) for p in wanted_db_paths(base)]
 
 
 def extract_keys():
@@ -413,14 +432,10 @@ def detect_databases():
             except:
                 continue
 
-    # Match keys to databases by salt. Cover every encrypted shard, not just message_0.
-    candidate_paths = []
-    # Order matters only for log clarity.
-    for sub in ("message", "biz_message", "contact", "session"):
-        for p in sorted(glob.glob(os.path.join(db_base, sub, "*.db"))):
-            if p.endswith("-shm") or p.endswith("-wal"):
-                continue
-            candidate_paths.append(p)
+    # Match keys to databases by salt. Cover every chat message shard, not just message_0 —
+    # but only the DBs the export actually uses (see wanted_db_paths), so keys.json doesn't
+    # get FTS/resource/media keys that would later be mis-globbed into the message export.
+    candidate_paths = wanted_db_paths(db_base)
 
     result = {}
     for db_path in candidate_paths:

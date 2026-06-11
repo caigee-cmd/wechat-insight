@@ -14,6 +14,7 @@
 import sqlite3
 import struct
 import os
+import re
 import sys
 import json
 import glob
@@ -34,6 +35,8 @@ SELF_SENDER_FALLBACK = 3
 SELF_SENDER_ID = "__self__"
 SELF_SENDER_NAME = "我"
 SYSTEM_SENDER_IDS = {22}
+# Chat message shard stem: message_0, message_12 ... (NOT message_fts / message_resource).
+_CHAT_SHARD_RE = re.compile(r"^message_\d+$")
 
 MSG_TYPE_LABELS = {
     1: "text",          # 文本
@@ -112,11 +115,10 @@ def decrypt_db(db_path, key_hex, out_path):
 
 
 def decrypt_databases(db_base, tmp_dir):
-    """解密所有需要的数据库（含 message_* / biz_message_* 全部分片）。
+    """解密所有需要的数据库（全部 message_N.db 聊天分片 + contact）。
 
     返回: {
-        "message_dbs": [path, ...],     # 解密后的 message_N.db 路径（按 N 升序）
-        "biz_message_dbs": [path, ...], # 解密后的 biz_message_N.db
+        "message_dbs": [path, ...],  # 解密后的 message_N.db 路径（按 N 升序）
         "contact": path 或 None,
     }
     """
@@ -130,30 +132,22 @@ def decrypt_databases(db_base, tmp_dir):
 
     result = {
         "message_dbs": [],
-        "biz_message_dbs": [],
         "contact": None,
     }
 
-    # 收集分片：每个分片在 keys.json 里以文件名 stem 作 key（"message_0", "message_3" ...）
-    def shards(subdir, prefix):
-        pairs = []
-        for src in sorted(glob.glob(os.path.join(db_base, subdir, f"{prefix}_*.db"))):
-            if src.endswith("-shm") or src.endswith("-wal"):
-                continue
-            stem = os.path.splitext(os.path.basename(src))[0]
-            if stem in keys:
-                pairs.append((stem, src))
-        return pairs
-
-    for stem, src in shards("message", "message"):
-        out = decrypt_one(src, keys[stem], f"{stem}.db")
-        result["message_dbs"].append(out)
-        print(f"  ✓ 解密 {stem}.db")
-
-    for stem, src in shards("biz_message", "biz_message"):
-        out = decrypt_one(src, keys[stem], f"{stem}.db")
-        result["biz_message_dbs"].append(out)
-        print(f"  ✓ 解密 {stem}.db")
+    # 只收聊天消息分片 message_N.db，按 keys.json 里的 stem 取 key。
+    # 用 _CHAT_SHARD_RE 排除 message_fts.db / message_resource.db —— 它们也匹配
+    # message_*.db 通配，但不是聊天库，混进导出会产生空/脏数据或报错。
+    for src in sorted(glob.glob(os.path.join(db_base, "message", "message_*.db"))):
+        if src.endswith("-shm") or src.endswith("-wal"):
+            continue
+        stem = os.path.splitext(os.path.basename(src))[0]
+        if not _CHAT_SHARD_RE.match(stem):
+            continue
+        if stem in keys:
+            out = decrypt_one(src, keys[stem], f"{stem}.db")
+            result["message_dbs"].append(out)
+            print(f"  ✓ 解密 {stem}.db")
 
     contact_src = os.path.join(db_base, "contact", "contact.db")
     if "contact" in keys and os.path.exists(contact_src):
@@ -224,8 +218,13 @@ def parse_group_sender(content, contacts):
     return None, None, content
 
 
-def detect_self_sender_id(db_path, contacts, hash_map):
-    """Detect the sender id used for self messages in group chats."""
+def count_self_sender_ids(db_path, contacts, hash_map):
+    """Raw real_sender_id frequencies (from group chats) for self-detection in one shard.
+
+    Returns a {real_sender_id: count} dict with NO fallback applied, so callers can sum
+    counts across shards before picking a winner. A shard with no group-chat evidence
+    returns an empty dict instead of voting for the fallback id.
+    """
     db = sqlite3.connect(db_path)
     counter = {}
 
@@ -256,7 +255,12 @@ def detect_self_sender_id(db_path, contacts, hash_map):
             counter[real_sender_id] = counter.get(real_sender_id, 0) + 1
 
     db.close()
+    return counter
 
+
+def detect_self_sender_id(db_path, contacts, hash_map):
+    """Detect the sender id used for self messages in group chats (single shard)."""
+    counter = count_self_sender_ids(db_path, contacts, hash_map)
     if not counter:
         return SELF_SENDER_FALLBACK
     return max(counter.items(), key=lambda item: item[1])[0]
@@ -547,12 +551,16 @@ def main(argv=None):
     for db in message_dbs:
         hash_map.update(get_hash_map(db))
 
-    # self_sender_id 在不同分片里可能不同；取所有分片汇总后最高频的
+    # self_sender_id：跨所有分片累计真实 real_sender_id 频次后取众数。
+    # 不能让每个分片各投一票——无群聊证据的分片会投 fallback，分片一多会把真实 id 压掉。
     self_counter = {}
     for db in message_dbs:
-        sid = detect_self_sender_id(db, contacts, hash_map)
-        self_counter[sid] = self_counter.get(sid, 0) + 1
-    self_sender_id = max(self_counter.items(), key=lambda x: x[1])[0]
+        for sid, n in count_self_sender_ids(db, contacts, hash_map).items():
+            self_counter[sid] = self_counter.get(sid, 0) + n
+    self_sender_id = (
+        max(self_counter.items(), key=lambda x: x[1])[0]
+        if self_counter else SELF_SENDER_FALLBACK
+    )
     print(f"检测到 self_sender_id: {self_sender_id}")
 
     # List mode (列举只看任一分片即可——hash_map 已合并)
