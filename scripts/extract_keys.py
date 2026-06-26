@@ -170,7 +170,17 @@ def prepare_wechat():
         shutil.copytree(WECHAT_APP, WECHAT_COPY, symlinks=True)
 
     print("  重新签名（去掉 Hardened Runtime）...")
-    run_cmd(f"codesign --remove-signature {WECHAT_COPY}", check=False)
+    # 微信内部嵌套了 WeChatAppEx.app 等子 bundle，必须先递归清除它们的
+    # 签名和扩展属性（Finder info / resource fork），否则 codesign --deep
+    # 会在子 bundle 上报 "resource fork, Finder information, or similar detritus not allowed"。
+    run_cmd(
+        f"find {WECHAT_COPY} -type d -name '*.app' -exec codesign --remove-signature {{}} +",
+        check=False,
+    )
+    run_cmd(
+        f"find {WECHAT_COPY} -type d -name '*.app' -exec xattr -cr {{}} +",
+        check=False,
+    )
     run_cmd(f"xattr -cr {WECHAT_COPY}", check=False)
     run_cmd(f"codesign --force --deep --sign - {WECHAT_COPY}")
     print("  ✓ 签名完成")
