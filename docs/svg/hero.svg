@@ -1,0 +1,107 @@
+<!--
+  WeChat Insight · Hero
+  Split composition: left title block, right chat-to-report flow.
+  Motif: chat bubbles (rounded rect + tail) → terminal → report card.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400"
+     role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">WeChat Insight · 我的微信关系画像</title>
+  <desc id="hero-desc">把本地微信聊天记录变成关系、商机、情绪与表达习惯的滑动年报，全程零联网。</desc>
+
+  <defs>
+    <linearGradient id="hero-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFBF5"/>
+      <stop offset="100%" stop-color="#FFECD6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- backdrop -->
+  <rect width="1200" height="400" fill="url(#hero-bg)"/>
+
+  <!-- ═══ LEFT: title block ═══ -->
+  <g id="title-block" transform="translate(64 48)">
+    <!-- eyebrow -->
+    <text font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+          font-size="15" font-weight="600" letter-spacing="3" fill="#E85A3C">WECHAT INSIGHT · 关系年报</text>
+
+    <!-- title -->
+    <text y="80" font-family="'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif"
+          font-size="72" font-weight="900" fill="#1A1A1A">我的微信</text>
+    <text y="160" font-family="'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif"
+          font-size="72" font-weight="900" fill="#1A1A1A">关系画像</text>
+
+    <!-- accent line -->
+    <rect y="185" width="100" height="5" rx="2.5" fill="#E85A3C"/>
+
+    <!-- subtitle -->
+    <text y="230" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', sans-serif"
+          font-size="20" fill="#4A4A4A">把本地微信聊天记录，变成一份可分享的滑动年报。</text>
+    <text y="260" font-family="-apple-system, 'PingFang SC', 'Hiragino Sans GB', sans-serif"
+          font-size="20" fill="#4A4A4A">整条链路在本机完成，聊天内容不出本机。</text>
+
+    <!-- meta strip -->
+    <text y="310" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+          font-size="13" letter-spacing="1.5" fill="#A89490">macOS · 微信 4.x · 单文件 HTML · 全程零联网</text>
+  </g>
+
+  <!-- ═══ RIGHT: chat → report flow ═══ -->
+  <g id="project-proof" transform="translate(700 36)">
+
+    <!-- chat bubbles (incoming = green, outgoing = white) -->
+    <!-- bubble 1: incoming -->
+    <g transform="translate(0 0)">
+      <rect width="200" height="44" rx="12" fill="#07C160" opacity="0.15"/>
+      <rect x="1" y="1" width="198" height="42" rx="11" fill="none" stroke="#07C160" stroke-width="1.2" opacity="0.4"/>
+      <text x="16" y="28" font-family="-apple-system, 'PingFang SC', sans-serif" font-size="15" fill="#2D8B4E">最近项目进展怎么样？</text>
+      <path d="M0,32 L-8,40 L0,38 Z" fill="#07C160" opacity="0.15"/>
+    </g>
+
+    <!-- bubble 2: outgoing -->
+    <g transform="translate(120 56)">
+      <rect width="240" height="44" rx="12" fill="#FFFFFF" stroke="#E0D5CC" stroke-width="1"/>
+      <text x="16" y="28" font-family="-apple-system, 'PingFang SC', sans-serif" font-size="15" fill="#3A3A3A">方案已发，等你确认后推进</text>
+      <path d="M240,32 L248,40 L240,38 Z" fill="#FFFFFF" stroke="#E0D5CC" stroke-width="1"/>
+    </g>
+
+    <!-- bubble 3: incoming -->
+    <g transform="translate(0 112)">
+      <rect width="170" height="44" rx="12" fill="#07C160" opacity="0.15"/>
+      <rect x="1" y="1" width="168" height="42" rx="11" fill="none" stroke="#07C160" stroke-width="1.2" opacity="0.4"/>
+      <text x="16" y="28" font-family="-apple-system, 'PingFang SC', sans-serif" font-size="15" fill="#2D8B4E">好的，周末前给反馈</text>
+      <path d="M0,32 L-8,40 L0,38 Z" fill="#07C160" opacity="0.15"/>
+    </g>
+
+    <!-- flow arrow -->
+    <g transform="translate(160 175)">
+      <line x1="0" y1="0" x2="0" y2="36" stroke="#E85A3C" stroke-width="2" stroke-dasharray="4 3"/>
+      <path d="M-6,30 L0,42 L6,30 Z" fill="#E85A3C"/>
+      <text x="14" y="26" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="12" fill="#A89490">./wechat-insight html</text>
+    </g>
+
+    <!-- report card -->
+    <g transform="translate(20 228)">
+      <rect width="340" height="120" rx="14" fill="#FFFFFF" stroke="#E0D5CC" stroke-width="1"/>
+      <!-- card header -->
+      <rect width="340" height="36" rx="14" fill="#E85A3C" opacity="0.08"/>
+      <rect y="22" width="340" height="14" fill="#E85A3C" opacity="0.08"/>
+      <text x="16" y="24" font-family="-apple-system, 'PingFang SC', sans-serif" font-size="14" font-weight="600" fill="#E85A3C">微信关系年报 · 2026</text>
+
+      <!-- mini bar chart -->
+      <g transform="translate(16 50)">
+        <rect x="0"   y="28" width="28" height="32" rx="4" fill="#07C160" opacity="0.7"/>
+        <rect x="38"  y="16" width="28" height="44" rx="4" fill="#07C160" opacity="0.5"/>
+        <rect x="76"  y="8"  width="28" height="52" rx="4" fill="#07C160" opacity="0.8"/>
+        <rect x="114" y="22" width="28" height="38" rx="4" fill="#E85A3C" opacity="0.6"/>
+        <rect x="152" y="0"  width="28" height="60" rx="4" fill="#E85A3C" opacity="0.8"/>
+      </g>
+
+      <!-- mini stats -->
+      <g transform="translate(210 50)" font-family="-apple-system, 'PingFang SC', sans-serif">
+        <text font-size="13" fill="#A89490">活跃联系人</text>
+        <text y="24" font-size="26" font-weight="700" fill="#1A1A1A">42</text>
+        <text y="50" font-size="13" fill="#A89490">待跟进线索</text>
+        <text y="72" font-size="26" font-weight="700" fill="#E85A3C">7</text>
+      </g>
+    </g>
+  </g>
+</svg>

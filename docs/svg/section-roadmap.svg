@@ -1,0 +1,25 @@
+<!--
+  Section header · 05 · Roadmap
+  Compact 1200×140 with chat-bubble + forward arrow motif.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="140" viewBox="0 0 1200 140"
+     role="img" aria-labelledby="s5-title s5-desc">
+  <title id="s5-title">05 · Roadmap</title>
+  <desc id="s5-desc">更多数据源，更多画像</desc>
+
+  <rect width="1200" height="140" fill="#FFFBF5"/>
+  <rect width="1200" height="3" fill="#E85A3C" opacity="0.6"/>
+
+  <!-- chat bubble motif with arrow -->
+  <g transform="translate(64 38)">
+    <rect width="36" height="26" rx="8" fill="#07C160" opacity="0.18"/>
+    <path d="M4,26 L0,34 L8,26 Z" fill="#07C160" opacity="0.18"/>
+    <path d="M10,13 L22,13 M18,8 L24,13 L18,18" fill="none" stroke="#07C160" stroke-width="1.5" opacity="0.6"/>
+  </g>
+
+  <text x="116" y="56" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+        font-size="14" font-weight="600" letter-spacing="3" fill="#E85A3C">05 · Roadmap</text>
+
+  <text x="64" y="110" font-family="'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif"
+        font-size="44" font-weight="900" fill="#1A1A1A">更多数据源，更多画像</text>
+</svg>

@@ -1,0 +1,26 @@
+<!--
+  Section header · 06 · 使用边界
+  Compact 1200×140 with chat-bubble + shield motif.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="140" viewBox="0 0 1200 140"
+     role="img" aria-labelledby="s6-title s6-desc">
+  <title id="s6-title">06 · 使用边界</title>
+  <desc id="s6-desc">请只处理你有权的数据</desc>
+
+  <rect width="1200" height="140" fill="#FFFBF5"/>
+  <rect width="1200" height="3" fill="#E85A3C" opacity="0.6"/>
+
+  <!-- chat bubble motif with shield -->
+  <g transform="translate(64 38)">
+    <rect width="36" height="26" rx="8" fill="#07C160" opacity="0.18"/>
+    <path d="M4,26 L0,34 L8,26 Z" fill="#07C160" opacity="0.18"/>
+    <path d="M18,6 L26,10 L26,16 C26,21 22,24 18,26 C14,24 10,21 10,16 L10,10 Z"
+          fill="none" stroke="#07C160" stroke-width="1.3" opacity="0.6"/>
+  </g>
+
+  <text x="116" y="56" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+        font-size="14" font-weight="600" letter-spacing="3" fill="#E85A3C">06 · 使用边界</text>
+
+  <text x="64" y="110" font-family="'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif"
+        font-size="44" font-weight="900" fill="#1A1A1A">请只处理你有权的数据</text>
+</svg>

@@ -1,0 +1,26 @@
+<!--
+  Section header · 01 · 隐私优先
+  Compact 1200×140 with chat-bubble + lock motif.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="140" viewBox="0 0 1200 140"
+     role="img" aria-labelledby="s1-title s1-desc">
+  <title id="s1-title">01 · 隐私优先</title>
+  <desc id="s1-desc">聊天内容，永不出本机</desc>
+
+  <rect width="1200" height="140" fill="#FFFBF5"/>
+  <rect width="1200" height="3" fill="#E85A3C" opacity="0.6"/>
+
+  <!-- chat bubble motif with lock -->
+  <g transform="translate(64 38)">
+    <rect width="36" height="26" rx="8" fill="#07C160" opacity="0.18"/>
+    <path d="M4,26 L0,34 L8,26 Z" fill="#07C160" opacity="0.18"/>
+    <rect x="13" y="9" width="10" height="8" rx="2" fill="none" stroke="#07C160" stroke-width="1.5" opacity="0.6"/>
+    <path d="M15,9 L15,6 A3,3 0 0 1 21,6 L21,9" fill="none" stroke="#07C160" stroke-width="1.5" opacity="0.6"/>
+  </g>
+
+  <text x="116" y="56" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
+        font-size="14" font-weight="600" letter-spacing="3" fill="#E85A3C">01 · 隐私优先</text>
+
+  <text x="64" y="110" font-family="'Songti SC', 'Source Han Serif SC', 'Noto Serif CJK SC', serif"
+        font-size="44" font-weight="900" fill="#1A1A1A">聊天内容，永不出本机</text>
+</svg>
