@@ -33,7 +33,7 @@
 读微信记录很敏感，所以第一原则是：**你的聊天内容永远不出本机。**
 
 - **分析全程零联网**：导出、特征、分析、出报告整条链路不访问网络，由 [`tests/test_no_network.py`](./tests/test_no_network.py) 自动断言守护。
-- **唯一的联网**：只在装依赖（`pip`）和 `setup` 注入 Frida 时发生，都不接触你的聊天内容。
+- **唯一的联网**：只在装依赖（`pip`）时发生，不接触你的聊天内容。
 - **开源可审计**：数据产物默认只写到本机 `~/.wechat-insight/`。
 
 > 想自己验证"零联网"？拔网线跑 `python3 -m unittest discover -s tests -p 'test_*.py'`。
@@ -61,20 +61,17 @@ python3 -m venv .venv
 
 > `./wechat-insight` launcher 会自动使用项目自带的 `.venv`，无需每次 `source activate`。需要 Python `3.9+`（年报是纯 Python 渲染，不依赖 Node）。
 
-### 四步出报告
+### 三步出报告
 
 1. **检查环境**：`./wechat-insight doctor`
-2. **首次设置**（提取密钥、生成配置，需手动登录微信）：`./wechat-insight setup`
-3. **导出聊天记录**（默认最近 7 天）：`./wechat-insight export --days 7`
-4. **生成报告**：
+2. **准备数据**：将已导出的聊天记录 JSONL 放到 `~/.wechat-insight/data/`
+3. **生成报告**：
 
    ```bash
    ./wechat-insight daily   # 日报
    ./wechat-insight html    # 滑动年报 HTML
    ./wechat-insight share   # 可分享的关系画像卡
    ```
-
-`setup` 会自动安装 `frida / frida-tools`，并把配置写到 `~/.config/wechat-insight.json` 和 `~/.config/wechat-keys.json`。
 
 > 大多数命令支持 `--input ~/.wechat-insight/data/messages_*.jsonl` 指定输入；`html` 默认出滑动年报，加 `--renderer legacy` 出旧版静态模板。
 
@@ -114,8 +111,7 @@ python3 -m venv .venv
 
 | 命令 | 作用 |
 |------|------|
-| `doctor` / `setup` | 检查配置 / 首次提取密钥并生成配置 |
-| `list` / `export` | 列出会话 / 导出 JSONL |
+| `doctor` | 检查配置状态 |
 | `features` | 生成统一特征层 |
 | `daily` / `digest` | 日报 / 一键自动化日报 |
 | `customer` / `labels` | 客户分析 / 联系人标签模板 |
@@ -133,10 +129,10 @@ python3 -m venv .venv
 
 ### OpenClaw 自动化
 
-OpenClaw 负责定时、推送和失败重试，定时任务只调用以下命令（`setup` 需手动执行，不要放进定时任务）：
+OpenClaw 负责定时、推送和失败重试，定时任务只调用以下命令：
 
 ```bash
-./wechat-insight doctor                   # 非 0 说明需要先手动 setup
+./wechat-insight doctor                   # 非 0 说明配置不完整
 ./wechat-insight digest --today --stdout  # 返回 0，读取 stdout 或 DIGEST_REPORT_PATH；当天无消息也返回 0
 ```
 

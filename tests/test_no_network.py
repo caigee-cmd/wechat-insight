@@ -4,10 +4,6 @@
 它会扫描所有数据处理脚本（导出、特征、分析、报告、分享卡），确认没有
 任何模块 import 了具备联网能力的库。一旦有人不小心引入 requests / urllib /
 socket 等依赖，这条测试会立刻失败，提醒"隐私承诺被破坏了"。
-
-说明：工具安装（pip / npm）和 setup 阶段注入 Frida 会联网，但那只是下载
-公共依赖包，发生在数据处理之外，且不经过这里扫描的模块，因此不影响"聊天
-内容零上传"的承诺。
 """
 
 import ast
@@ -37,14 +33,12 @@ FORBIDDEN_TOP_LEVEL = {
     "asyncio",  # 拉进来通常是为了网络 IO，分析链路不需要
 }
 
-# 只扫描"数据处理链路"。setup/密钥提取（extract_keys）允许联网装 Frida，
-# 不在隐私承诺覆盖范围内，因此排除。
+# 只扫描"数据处理链路"（特征、分析、报告）。
 SCANNED_DIRS = [
     ROOT / "scripts" / "analyze",
     ROOT / "scripts" / "features",
 ]
 SCANNED_FILES = [
-    ROOT / "scripts" / "export_messages.py",
     ROOT / "wechat_insight_cli.py",
 ]
 

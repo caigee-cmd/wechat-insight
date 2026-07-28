@@ -22,22 +22,6 @@ def load_script_module(name, relative_path):
 
 
 DAILY_MODULE = load_script_module("daily", "scripts/analyze/daily.py")
-EXPORT_MODULE = load_script_module("export_messages", "scripts/export_messages.py")
-
-
-def build_export_args(days=1, today=False, config_path=None, output_dir=None):
-    args = []
-    if today:
-        today_label = datetime.now().strftime("%Y-%m-%d")
-        args.extend(["--start", today_label, "--end", today_label])
-    else:
-        args.extend(["--days", str(days or 1)])
-
-    if config_path:
-        args.extend(["--config", config_path])
-    if output_dir:
-        args.extend(["--output", os.path.expanduser(output_dir)])
-    return args
 
 
 def resolve_latest_input(config_path=None):
@@ -87,19 +71,10 @@ def write_empty_digest(input_files, output_file=None, config_path=None):
 
 
 def run_digest(input_path=None, output_file=None, config_path=None, days=1,
-               today=False, export_main=None, output_dir=None):
+               today=False, output_dir=None):
     if input_path:
         resolved_input = input_path
     else:
-        runner = export_main or EXPORT_MODULE.main
-        exit_code = runner(build_export_args(
-            days=days,
-            today=today,
-            config_path=config_path,
-            output_dir=output_dir,
-        ))
-        if exit_code:
-            raise RuntimeError(f"export 失败，退出码: {exit_code}")
         resolved_input = resolve_latest_input(config_path=config_path)
 
     input_files = DAILY_MODULE.resolve_input_files(
@@ -125,9 +100,8 @@ def main(argv=None):
     parser.add_argument("--input", "-i", help="已存在的 JSONL 输入；提供后跳过 export")
     parser.add_argument("--output", "-o", help="输出 Markdown 路径")
     parser.add_argument("--config", help="配置文件路径", default=None)
-    parser.add_argument("--days", "-d", type=int, default=1, help="未指定 input 时导出最近 N 天")
-    parser.add_argument("--today", action="store_true", help="未指定 input 时导出当天自然日")
-    parser.add_argument("--export-output", help="export 输出目录")
+    parser.add_argument("--days", "-d", type=int, default=1, help="（保留参数，当前未使用）")
+    parser.add_argument("--today", action="store_true", help="（保留参数，当前未使用）")
     parser.add_argument("--stdout", action="store_true", help="同时把 Markdown 正文打印到 stdout")
     args = parser.parse_args(argv)
 
@@ -137,7 +111,6 @@ def main(argv=None):
         config_path=args.config,
         days=args.days,
         today=args.today,
-        output_dir=args.export_output,
     )
 
     print("WECHAT_INSIGHT_DIGEST")

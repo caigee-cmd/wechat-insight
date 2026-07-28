@@ -23,74 +23,14 @@ def load_module():
 
 
 class CliTests(unittest.TestCase):
-    def test_list_command_forwards_list_chats_flag(self):
-        module = load_module()
-        calls = []
-
-        export_module = types.SimpleNamespace(
-            main=lambda argv=None: calls.append(argv) or 0
-        )
-
-        result = module.main(["list"], export_module=export_module)
-
-        self.assertEqual(result, 0)
-        self.assertEqual(calls, [["--list-chats"]])
-
-    def test_export_command_forwards_remaining_args(self):
-        module = load_module()
-        calls = []
-
-        export_module = types.SimpleNamespace(
-            main=lambda argv=None: calls.append(argv) or 0
-        )
-
-        result = module.main(
-            ["export", "--days", "7", "--contacts", "老婆"],
-            export_module=export_module,
-        )
-
-        self.assertEqual(result, 0)
-        self.assertEqual(calls, [["--days", "7", "--contacts", "老婆"]])
-
-    def test_setup_command_calls_extract_module(self):
-        module = load_module()
-        calls = []
-
-        extract_module = types.SimpleNamespace(
-            main=lambda argv=None: calls.append(argv) or 0
-        )
-
-        result = module.main(["setup"], extract_module=extract_module)
-
-        self.assertEqual(result, 0)
-        self.assertEqual(calls, [[]])
-
-    def test_main_uses_sys_argv_when_argv_is_none(self):
-        module = load_module()
-        calls = []
-
-        export_module = types.SimpleNamespace(
-            main=lambda argv=None: calls.append(argv) or 0
-        )
-
-        with mock.patch.object(sys, "argv", ["wechat-insight", "list"]):
-            result = module.main(None, export_module=export_module)
-
-        self.assertEqual(result, 0)
-        self.assertEqual(calls, [["--list-chats"]])
-
     def test_doctor_command_reports_config_status(self):
         module = load_module()
 
         with tempfile.TemporaryDirectory() as td:
             config_path = pathlib.Path(td) / "wechat-insight.json"
-            keys_path = pathlib.Path(td) / "wechat-keys.json"
             config_path.write_text(json.dumps({
                 "wxid": "wxid_test",
-                "db_base_path": "/tmp/db_storage",
-            }), encoding="utf-8")
-            keys_path.write_text(json.dumps({
-                "message_0": "ab" * 32,
+                "data_dir": "/tmp/data",
             }), encoding="utf-8")
 
             buffer = io.StringIO()
@@ -98,14 +38,26 @@ class CliTests(unittest.TestCase):
                 result = module.main(
                     ["doctor"],
                     config_path=str(config_path),
-                    keys_path=str(keys_path),
                 )
 
         output = buffer.getvalue()
         self.assertEqual(result, 0)
         self.assertIn("配置文件: 已存在", output)
-        self.assertIn("密钥文件: 已存在", output)
         self.assertIn("wxid: wxid_test", output)
+
+    def test_main_uses_sys_argv_when_argv_is_none(self):
+        module = load_module()
+        calls = []
+
+        daily_module = types.SimpleNamespace(
+            main=lambda argv=None: calls.append(argv) or 0
+        )
+
+        with mock.patch.object(sys, "argv", ["wechat-insight", "daily", "--input", "/tmp/m.jsonl"]):
+            result = module.main(None, daily_module=daily_module)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(calls, [["--input", "/tmp/m.jsonl"]])
 
     def test_daily_command_forwards_remaining_args(self):
         module = load_module()

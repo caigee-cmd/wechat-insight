@@ -1,9 +1,8 @@
 ---
 name: analyzing-wechat-chats
 description: |
-  Use when analyzing, exporting, or reporting on WeChat Mac 4.x local chat history on macOS - extracts encrypted local messages, builds feature layers, and generates daily reports, customer insights, contact labels, and a single-file HTML report (a pure-Python narrative slides recap by default).
+  Use when analyzing, exporting, or reporting on WeChat Mac 4.x local chat history on macOS - builds feature layers from exported JSONL data, and generates daily reports, customer insights, contact labels, and a single-file HTML report (a pure-Python narrative slides recap by default).
   触发词：微信分析、分析微信、微信洞察、微信聊天分析、wechat-insight、analyzing-wechat-chats
-  当用户提到想分析微信聊天记录、想看聊天报告、想导出微信数据、想看客户线索时，务必使用本 skill。
 ---
 
 # 分析微信聊天记录 Analyzing WeChat Chats
@@ -24,9 +23,6 @@ description: |
 这是一个 **本地微信分析工作台 v1**。
 
 当前已经可用的能力：
-- 数据库密钥提取与配置
-- 聊天记录导出 JSONL
-- 群聊 / 联系人列表
 - feature 层生成
 - Markdown 日报
 - 面向自动化宿主的一键 digest 日报
@@ -55,10 +51,8 @@ description: |
 
 - **优先使用统一 CLI：`./wechat-insight`**
 - 首次使用先跑 `doctor`
-- 没配置好就跑 `setup`
 - 分析类请求尽量走：
-  - `export`
-  - `features`
+    - `features`
   - `daily`
   - `labels`
   - `customer`
@@ -71,12 +65,8 @@ description: |
 | 命令 | 作用 | 状态 |
 |------|------|------|
 | `./wechat-insight doctor` | 检查配置状态 | 可用 |
-| `./wechat-insight setup` | 首次提取密钥并生成配置 | 可用 |
-| `./wechat-insight list` | 列出群聊和联系人 | 可用 |
-| `./wechat-insight export` | 导出聊天记录 JSONL | 可用 |
 | `./wechat-insight features` | 生成 feature 层 | 可用 |
 | `./wechat-insight daily` | 生成日报 | 可用 |
-| `./wechat-insight digest` | 一键导出并生成自动化日报 | 可用 |
 | `./wechat-insight labels` | 生成联系人标签模板 | 可用 |
 | `./wechat-insight customer` | 生成客户 / 商业分析 | 可用 |
 | `./wechat-insight report-data` | 汇总展示层统一 JSON 载荷 | 可用 |
@@ -111,12 +101,9 @@ description: |
 
 脚本会自动：
 1. 检查微信环境
-2. 处理 Frida 注入前置条件
-3. 捕获数据库密钥
 4. 自动识别 `wxid` 和数据库路径
 5. 生成：
    - `~/.config/wechat-insight.json`
-   - `~/.config/wechat-keys.json`
 
 注意：
 - 过程中用户需要手动登录微信
@@ -129,8 +116,6 @@ description: |
 ```bash
 ./wechat-insight list
 ```
-
-#### 2. 用户想导出聊天记录
 
 常见命令：
 
@@ -181,7 +166,6 @@ description: |
 - `doctor` 非 0：提示用户先人工执行 `./wechat-insight setup`
 - `digest` 返回 0：从 stdout 读取 Markdown，或读取 `DIGEST_REPORT_PATH=...` 指向的文件
 - 当天没有消息：`digest` 仍会返回 0，并生成“暂无可分析消息”的日报
-- 不要在定时任务中执行 `setup`，因为它需要用户登录微信和 Frida 注入
 
 #### 4. 用户想做客户 / 商业分析
 
@@ -249,7 +233,6 @@ description: |
 
 优先走：
 1. `./wechat-insight doctor`
-2. 若未配置则 `./wechat-insight setup`
 3. 若未明确分析方向，优先推荐：
    - `daily`
    - `customer`
@@ -287,10 +270,7 @@ description: |
 ### 配置
 
 - `~/.config/wechat-insight.json`
-- `~/.config/wechat-keys.json`
 - `~/.config/wechat-insight-contacts_labels.json`
-
-### 导出数据
 
 目录：
 
@@ -334,7 +314,6 @@ description: |
 
 ## 关键数据字段
 
-当前导出层已经有这些关键字段：
 - `is_self`
 - `direction`
 - `real_sender_id`
@@ -356,7 +335,6 @@ description: |
 
 这意味着：
 - 日报和商业分析已经有稳定底座
-- MBTI / 响应延迟 / 更细社交分析已经接入统一导出链路
 - HTML 报告已经可以直接生成（默认叙事版滑动年报，纯 Python 渲染）
 
 ---
@@ -402,8 +380,6 @@ description: |
 
 - 所有数据只在本地处理
 - 不上传任何服务器
-- 密钥保存在本地 `~/.config/`
-- Frida 只用于首次提取密钥
 
 ---
 
@@ -415,9 +391,6 @@ description: |
 
 已经成熟可用的主线：
 - `doctor`
-- `setup`
-- `list`
-- `export`
 - `features`
 - `daily`
 - `labels`

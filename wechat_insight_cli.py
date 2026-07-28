@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified CLI for WeChat Insight."""
+"""Unified CLI for WeChat Insight (analysis & reporting)."""
 
 import argparse
 import importlib.util
@@ -11,7 +11,6 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent
 DEFAULT_CONFIG_PATH = os.path.expanduser("~/.config/wechat-insight.json")
-DEFAULT_KEYS_PATH = os.path.expanduser("~/.config/wechat-keys.json")
 
 
 def load_script_module(name, relative_path):
@@ -23,20 +22,12 @@ def load_script_module(name, relative_path):
     return module
 
 
-def build_parser(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
+def build_parser(config_path=DEFAULT_CONFIG_PATH):
     parser = argparse.ArgumentParser(
         prog="wechat-insight",
-        description="微信聊天记录提取与导出 CLI",
+        description="微信聊天记录分析与报告 CLI",
     )
     subparsers = parser.add_subparsers(dest="command")
-
-    subparsers.add_parser("setup", help="首次提取数据库密钥并生成配置")
-
-    list_parser = subparsers.add_parser("list", help="列出群聊和联系人")
-    list_parser.add_argument("args", nargs=argparse.REMAINDER)
-
-    export_parser = subparsers.add_parser("export", help="导出聊天记录")
-    export_parser.add_argument("args", nargs=argparse.REMAINDER)
 
     features_parser = subparsers.add_parser("features", help="从导出数据生成 feature 层")
     features_parser.add_argument("args", nargs=argparse.REMAINDER)
@@ -83,25 +74,17 @@ def build_parser(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
         default=config_path,
         help="配置文件路径",
     )
-    doctor_parser.add_argument(
-        "--keys-path",
-        default=keys_path,
-        help="密钥文件路径",
-    )
 
     return parser
 
 
-def run_doctor(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
+def run_doctor(config_path=DEFAULT_CONFIG_PATH):
     config_exists = os.path.exists(config_path)
-    keys_exists = os.path.exists(keys_path)
 
     print("WeChat Insight Doctor")
     print("=" * 24)
     print(f"配置文件: {'已存在' if config_exists else '缺失'}")
-    print(f"密钥文件: {'已存在' if keys_exists else '缺失'}")
     print(f"配置路径: {config_path}")
-    print(f"密钥路径: {keys_path}")
 
     config = {}
     if config_exists:
@@ -109,46 +92,34 @@ def run_doctor(config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
             config = json.load(f)
 
     wxid = config.get("wxid")
-    db_base_path = config.get("db_base_path")
     data_dir = config.get("data_dir")
 
     print(f"wxid: {wxid or '未配置'}")
-    print(f"db_base_path: {db_base_path or '未配置'}")
     print(f"data_dir: {data_dir or '未配置'}")
 
-    complete = config_exists and keys_exists and wxid and db_base_path
+    complete = config_exists and wxid and data_dir
     if complete:
-        print("状态: 可直接使用 `./wechat-insight list` 或 `./wechat-insight export ...`")
+        print("状态: 可直接使用分析命令（daily / html / share 等）")
         return 0
 
-    print("状态: 需要先执行 `./wechat-insight setup`")
+    print("状态: 配置不完整，请检查配置文件")
     return 1
 
 
-def main(argv=None, extract_module=None, export_module=None, features_module=None,
+def main(argv=None, features_module=None,
          daily_module=None, digest_module=None, customer_module=None, labels_module=None,
          unreplied_module=None,
          report_data_module=None, html_module=None,
          emotion_module=None, mbti_module=None, speech_module=None, social_module=None,
          share_module=None,
-         config_path=DEFAULT_CONFIG_PATH, keys_path=DEFAULT_KEYS_PATH):
+         config_path=DEFAULT_CONFIG_PATH):
     argv = list(sys.argv[1:] if argv is None else argv)
 
     if argv and argv[0] in {
-        "list", "export", "features", "daily", "customer", "labels",
+        "features", "daily", "customer", "labels",
         "digest", "report-data", "html", "share", "emotion", "mbti", "speech", "social",
         "unreplied",
     }:
-        if argv[0] == "list":
-            export_module = export_module or load_script_module(
-                "export_messages", "scripts/export_messages.py"
-            )
-            return export_module.main(argv[1:] + ["--list-chats"])
-        if argv[0] == "export":
-            export_module = export_module or load_script_module(
-                "export_messages", "scripts/export_messages.py"
-            )
-            return export_module.main(argv[1:])
         if argv[0] == "features":
             features_module = features_module or load_script_module(
                 "build_features", "scripts/features/build_features.py"
@@ -214,26 +185,16 @@ def main(argv=None, extract_module=None, export_module=None, features_module=Non
         )
         return labels_module.main(argv[1:])
 
-    parser = build_parser(config_path=config_path, keys_path=keys_path)
+    parser = build_parser(config_path=config_path)
     args = parser.parse_args(argv)
 
     if args.command is None:
         parser.print_help()
         return 0
 
-    extract_module = extract_module or load_script_module(
-        "extract_keys", "scripts/extract_keys.py"
-    )
-    if args.command == "setup":
-        extract_module = extract_module or load_script_module(
-            "extract_keys", "scripts/extract_keys.py"
-        )
-        return extract_module.main([])
-
     if args.command == "doctor":
         return run_doctor(
             config_path=args.config_path,
-            keys_path=args.keys_path,
         )
 
     parser.print_help()

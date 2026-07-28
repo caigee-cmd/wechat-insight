@@ -20,9 +20,8 @@ def load_module():
 
 
 class DigestTests(unittest.TestCase):
-    def test_digest_exports_recent_messages_when_input_is_not_provided(self):
+    def test_digest_resolves_latest_input_when_input_is_not_provided(self):
         module = load_module()
-        calls = []
 
         with tempfile.TemporaryDirectory() as td:
             temp_dir = pathlib.Path(td)
@@ -36,33 +35,28 @@ class DigestTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            def export_main(argv):
-                calls.append(argv)
-                messages_path = temp_dir / "messages_last1d.jsonl"
-                messages_path.write_text(
-                    json.dumps({
-                        "timestamp": 1714377600,
-                        "datetime": "2024-04-29 08:00:00",
-                        "chat_name": "客户A",
-                        "sender_name": "客户A",
-                        "content": "今天可以帮我报价吗？",
-                        "msg_type_label": "text",
-                        "is_group": False,
-                        "direction": "inbound",
-                        "is_self": False,
-                    }, ensure_ascii=False) + "\n",
-                    encoding="utf-8",
-                )
-                return 0
-
-            result = module.run_digest(
-                days=1,
-                output_file=str(report_path),
-                config_path=str(config_path),
-                export_main=export_main,
+            # Create a pre-existing export file for digest to discover
+            messages_path = temp_dir / "messages_last1d.jsonl"
+            messages_path.write_text(
+                json.dumps({
+                    "timestamp": 1714377600,
+                    "datetime": "2024-04-29 08:00:00",
+                    "chat_name": "客户A",
+                    "sender_name": "客户A",
+                    "content": "今天可以帮我报价吗？",
+                    "msg_type_label": "text",
+                    "is_group": False,
+                    "direction": "inbound",
+                    "is_self": False,
+                }, ensure_ascii=False) + "\n",
+                encoding="utf-8",
             )
 
-        self.assertEqual(calls, [["--days", "1", "--config", str(config_path)]])
+            result = module.run_digest(
+                output_file=str(report_path),
+                config_path=str(config_path),
+            )
+
         self.assertEqual(result["report_path"], str(report_path))
         self.assertIn("客户A", result["report_markdown"])
 

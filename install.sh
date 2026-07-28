@@ -16,7 +16,7 @@ log() { printf "\033[1;34m[wechat-insight]\033[0m %s\n" "$*"; }
 err() { printf "\033[1;31m[wechat-insight]\033[0m %s\n" "$*" >&2; }
 
 [[ "$(uname -s)" == "Darwin" ]] \
-    || { err "目前只支持 macOS（依赖微信 Mac 4.x + Frida）"; exit 1; }
+    || { err "目前只支持 macOS"; exit 1; }
 
 command -v python3 >/dev/null 2>&1 \
     || { err "未找到 python3（需要 3.9+）"; exit 1; }
@@ -48,14 +48,12 @@ cat <<EOF
 
 ✅ 装好了。Checkout: $INSTALL_DIR
 
-下一步（首次配置，会引导登录微信 + Frida 注入提取密钥）：
+下一步：
   cd "$INSTALL_DIR"
   ./wechat-insight doctor
-  ./wechat-insight setup
 
 之后日常使用（./wechat-insight 会自动用项目自带的 .venv，不需要手动 activate）：
   cd "$INSTALL_DIR"
-  ./wechat-insight export --days 7
   ./wechat-insight daily
   ./wechat-insight html
 EOF
