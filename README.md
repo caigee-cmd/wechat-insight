@@ -63,6 +63,8 @@ python3 -m venv .venv
 
 ### 三步出报告
 
+> 本工具不包含数据采集能力。请自行准备聊天记录 JSONL 后放入 `~/.wechat-insight/data/`。
+
 1. **检查环境**：`./wechat-insight doctor`
 2. **准备数据**：将已导出的聊天记录 JSONL 放到 `~/.wechat-insight/data/`
 3. **生成报告**：
