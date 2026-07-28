@@ -9,7 +9,7 @@
 ![upload](https://img.shields.io/badge/%E8%81%8A%E5%A4%A9%E5%86%85%E5%AE%B9-0%20%E4%B8%8A%E4%BC%A0-2ea44f)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 
-面向 `macOS + 微信 Mac 4.x`，从本地加密数据库提取聊天记录，生成日报、客户分析、人格画像，最终输出一份双击即开的**单文件 HTML 滑动年报**。
+面向 `macOS`，基于已导出的微信聊天记录 JSONL，生成日报、客户分析、人格画像，最终输出一份双击即开的**单文件 HTML 滑动年报**。
 
 **不想安装？[在线看一份示例报告](https://caigee-cmd.github.io/wechat-insight/)**（脱敏假数据，无需安装、无需联网）。
 
@@ -40,7 +40,7 @@
 
 ---
 
-<img src="docs/svg/section-quickstart.svg" width="100%" alt="03 · 快速开始 · 四步，跑出第一份年报">
+<img src="docs/svg/section-quickstart.svg" width="100%" alt="03 · 快速开始 · 三步，跑出第一份年报">
 
 ### 安装
 
@@ -84,7 +84,7 @@ python3 -m venv .venv
 /plugin install wechat-insight@wechat-insight
 ```
 
-装好后直接说"分析我的微信聊天记录""看看最近的客户线索""生成一份微信滑动年报"，就会触发 `analyzing-wechat-chats` skill，由它编排导出、分析和出报告。
+装好后直接说"分析我的微信聊天记录""看看最近的客户线索""生成一份微信滑动年报"，就会触发 `analyzing-wechat-chats` skill，由它编排分析和出报告。
 
 > 插件只含编排用的 skill，不含 CLI 本体；skill 运行时仍需要 `./wechat-insight` CLI，本机没装会引导你跑安装脚本。
 
@@ -146,7 +146,7 @@ OpenClaw 负责定时、推送和失败重试，定时任务只调用以下命�
 
 <img src="docs/svg/section-boundaries.svg" width="100%" alt="06 · 使用边界 · 请只处理你有权的数据">
 
-- 仅支持 macOS，需已安装并登录过微信 Mac 4.x
+- 仅支持 macOS
 - 请只处理你自己有权处理的数据
 - MBTI / 情绪 / 口癖 / 社交图谱属于启发式分析（基于聊天文本的统计规则推测，不是医学诊断、心理测评或模型级结论），仅供参考
 
