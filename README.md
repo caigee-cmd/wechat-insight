@@ -164,3 +164,7 @@ python3 -m unittest discover -s tests -p 'test_*.py'   # Python 测试
 ## License
 
 MIT，见 [LICENSE](./LICENSE)
+
+## Author
+
+caiji · 522caiji@gmail.com · WeChat: caiji748
