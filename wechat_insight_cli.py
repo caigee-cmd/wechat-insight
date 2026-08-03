@@ -103,6 +103,9 @@ def run_doctor(config_path=DEFAULT_CONFIG_PATH):
         return 0
 
     print("状态: 配置不完整，请检查配置文件")
+    print("遇到报告生成或 JSONL 格式问题，欢迎反馈：")
+    print("  Issue: https://github.com/caigee-cmd/wechat-insight/issues")
+    print("  微信: caiji748 · 邮箱: 522caiji@gmail.com")
     return 1
 
 
